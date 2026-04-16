@@ -1,0 +1,12 @@
+
+Nkotlin:S65080"*Replace this usage of Void type with Unit.(ƒÖ¥—üÿÿÿÿ8ô›·•ï1
+Ikotlin:S6508/"*Replace this usage of Void type with Unit.(Ç®é¶8õ›·•ï1
+Ikotlin:S6508/"*Replace this usage of Void type with Unit.(Ç®é¶8õ›·•ï1
+>kotlin:S1128"Remove this unused import.(¼„÷ãûÿÿÿÿ8‡œ·•ï1
+Bkotlin:S1874/"#Deprecated code should not be used.(Ç®é¶8‰œ·•ï1
+Bkotlin:S1874,"#Deprecated code should not be used.(Ôİ­8‰œ·•ï1
+Gkotlin:S1874F"#Deprecated code should not be used.(­Ïé¬øÿÿÿÿ8‰œ·•ï1
+Ckotlin:S1874‘"#Deprecated code should not be used.(¾ì²8‰œ·•ï1
+Ckotlin:S1874‘"#Deprecated code should not be used.(¾ì²8‰œ·•ï1
+Gkotlin:S1874"#Deprecated code should not be used.(øÚˆŸùÿÿÿÿ8‰œ·•ï1
+Bkotlin:S1874/"#Deprecated code should not be used.(Ç®é¶8‰œ·•ï1

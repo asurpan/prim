@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+
+    android:fitsSystemWindows="true"
+
+    tools:context=".SettingsActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ajustes de la Aplicación"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Número de Combinaciones Adicionales:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etNumAdditionalCombinations"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ej: 5 (entre 1 y 10)"
+        android:inputType="number"
+        android:maxLength="2"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnSaveSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Guardar Ajustes"
+        android:backgroundTint="#2196F3"
+        android:layout_marginBottom="24dp"/>
+
+    <Switch
+        android:id="@+id/switchNotifications"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Activar Notificaciones de Aciertos"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp"
+        android:checked="true"/>
+
+    <TextView
+        android:id="@+id/notificationInfoTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Te avisaremos si alguna de tus combinaciones tiene 3 o más aciertos después de cada sorteo de la Primitiva (una vez al día)."
+        android:textSize="14sp"
+        android:textColor="#616161"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recibir notificaciones en los siguientes días de sorteo:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbMonday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lunes"
+        android:checked="true"
+        android:layout_marginStart="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbThursday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Jueves"
+        android:checked="true"
+        android:layout_marginStart="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbSaturday"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Sábado"
+        android:checked="true"
+        android:layout_marginStart="8dp"/>
+
+</LinearLayout>
