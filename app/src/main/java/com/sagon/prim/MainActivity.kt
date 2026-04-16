@@ -120,11 +120,15 @@ fun MainScreen(viewModel: MainViewModel) {
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(top = 4.dp)
                                 ) {
+                                    val statusColor by animateColorAsState(
+                                        if (state.data.isLive) EmeraldMain else Color.Gray,
+                                        label = "statusColor"
+                                    )
                                     Box(
                                         modifier = Modifier
                                             .size(8.dp)
                                             .clip(CircleShape)
-                                            .background(if (state.data.isLive) EmeraldMain else Color.Gray)
+                                            .background(statusColor)
                                             .shadow(if (state.data.isLive) 8.dp else 0.dp, CircleShape)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -134,7 +138,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 1.sp
                                         ),
-                                        color = if (state.data.isLive) EmeraldMain else Color.Gray.copy(alpha = 0.7f)
+                                        color = statusColor.copy(alpha = 0.8f)
                                     )
                                 }
                             }
@@ -153,7 +157,6 @@ fun MainScreen(viewModel: MainViewModel) {
             },
             containerColor = Color.Transparent
         ) { padding ->
-            // Usamos LazyColumn como contenedor principal para permitir scroll y navegación
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -180,7 +183,6 @@ fun MainScreen(viewModel: MainViewModel) {
                                 modifier = Modifier.weight(1f)
                             ) {
                                 scope.launch {
-                                    // Scroll al encabezado de historial (índice 3: el texto "HISTORIAL RECIENTE")
                                     listState.animateScrollToItem(index = 3)
                                 }
                             }
@@ -295,7 +297,7 @@ fun MainScreen(viewModel: MainViewModel) {
                             }
                         }
                         is MainUiState.Error -> {
-                            Text("Error de conexión", color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                            Text("Error: ${state.message}", color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -304,7 +306,7 @@ fun MainScreen(viewModel: MainViewModel) {
                 item {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val scale by animateFloatAsState(if (isPressed) 0.96f else 1f)
+                    val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "buttonScale")
 
                     Button(
                         onClick = { viewModel.generateRandomCombination() },
@@ -417,7 +419,7 @@ fun NumberBall(text: String, type: String) {
 fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f)
+    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "actionScale")
 
     Card(
         modifier = modifier
