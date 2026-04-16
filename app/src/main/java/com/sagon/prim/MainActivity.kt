@@ -1,12 +1,25 @@
 package com.sagon.prim
 
+import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.os.Bundle
+import android.util.Log
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -28,12 +41,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import nl.dionsegijn.konfetti.compose.KonfettiView
 import nl.dionsegijn.konfetti.core.Party
 import nl.dionsegijn.konfetti.core.Position
@@ -70,6 +89,7 @@ fun MainScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
 
     var showManualSelector by remember { mutableStateOf(false) }
+    var showTicketReader by remember { mutableStateOf(false) }
     var initialManualNumbers by remember { mutableStateOf<List<Int>>(emptyList()) }
     var showExitDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -113,9 +133,8 @@ fun MainScreen(viewModel: MainViewModel) {
             ) {
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ActionButton("ELEGIR", Icons.Rounded.Edit, Color(0xFF60A5FA), Modifier.weight(1f)) {
-                            initialManualNumbers = emptyList()
-                            showManualSelector = true
+                        ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, Color(0xFFF472B6), Modifier.weight(1f)) {
+                            showTicketReader = true
                         }
                         ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "4 ÉXITOS + 2 AZAR", true, { showInfoDialog = true }) {
                             viewModel.generarPrediccionMaestra()
@@ -201,6 +220,23 @@ fun MainScreen(viewModel: MainViewModel) {
             })
         }
 
+        if (showTicketReader) {
+            TicketReaderDialog(
+                onDismiss = { showTicketReader = false },
+                onScanManual = {
+                    initialManualNumbers = emptyList()
+                    showManualSelector = true
+                    showTicketReader = false
+                },
+                onNumbersDetected = { numbers ->
+                    initialManualNumbers = numbers
+                    showManualSelector = true
+                    showTicketReader = false
+                    Toast.makeText(context, "Boleto detectado con éxito", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+
         if (showManualSelector) {
             val frequentList = if (uiState is MainUiState.Success) (uiState as MainUiState.Success).data.frequent else emptyList()
             ManualEntryDialog(
@@ -212,6 +248,187 @@ fun MainScreen(viewModel: MainViewModel) {
         }
 
         if (showExitDialog) LuxeExitDialog({ showExitDialog = false }, { (context as? Activity)?.finish() })
+    }
+}
+
+@Composable
+fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumbersDetected: (List<Int>) -> Unit) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val recognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+    var isProcessing by remember { mutableStateOf(false) }
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> hasCameraPermission = granted }
+    )
+
+    LaunchedEffect(Unit) {
+        if (!hasCameraPermission) {
+            launcher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
+            border = BorderStroke(1.dp, Color(0xFFF472B6).copy(0.3f))
+        ) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Rounded.QrCodeScanner, null, tint = Color(0xFFF472B6), modifier = Modifier.size(40.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("LECTOR OPTIQUE V17", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text("Escanee el área de los números del boleto", 
+                    color = Color.White.copy(0.6f), fontSize = 12.sp, textAlign = TextAlign.Center)
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.Black)
+                        .border(2.dp, Color(0xFFF472B6).copy(0.2f), RoundedCornerShape(24.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (hasCameraPermission) {
+                        AndroidView(
+                            factory = { ctx ->
+                                val previewView = PreviewView(ctx).apply {
+                                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                                }
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                                cameraProviderFuture.addListener({
+                                    val cameraProvider = cameraProviderFuture.get()
+                                    val preview = Preview.Builder().build().also {
+                                        it.setSurfaceProvider(previewView.surfaceProvider)
+                                    }
+                                    
+                                    val imageAnalysis = ImageAnalysis.Builder()
+                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        .build()
+
+                                    imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
+                                        if (isProcessing) {
+                                            imageProxy.close()
+                                            return@setAnalyzer
+                                        }
+
+                                        val mediaImage = imageProxy.image
+                                        if (mediaImage != null) {
+                                            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                                            recognizer.process(image)
+                                                .addOnSuccessListener { visionText ->
+                                                    val foundNumbers = visionText.text
+                                                        .split(Regex("[^0-9]+"))
+                                                        .mapNotNull { it.toIntOrNull() }
+                                                        .filter { it in 1..49 }
+                                                        .distinct()
+
+                                                    if (foundNumbers.size >= 6) {
+                                                        isProcessing = true
+                                                        onNumbersDetected(foundNumbers.take(6).sorted())
+                                                    }
+                                                }
+                                                .addOnCompleteListener {
+                                                    imageProxy.close()
+                                                }
+                                        } else {
+                                            imageProxy.close()
+                                        }
+                                    }
+                                    
+                                    try {
+                                        cameraProvider.unbindAll()
+                                        cameraProvider.bindToLifecycle(
+                                            lifecycleOwner,
+                                            CameraSelector.DEFAULT_BACK_CAMERA,
+                                            preview,
+                                            imageAnalysis
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e("CameraX", "Binding failed", e)
+                                    }
+                                }, ContextCompat.getMainExecutor(ctx))
+                                previewView
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        
+                        // Overlay de escaneo
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val strokeWidth = 2.dp.toPx()
+                            val color = Color(0xFFF472B6)
+                            val pad = 40.dp.toPx()
+                            
+                            // Esquema de enfoque
+                            drawLine(color, androidx.compose.ui.geometry.Offset(pad, pad), androidx.compose.ui.geometry.Offset(pad + 50f, pad), strokeWidth * 2)
+                            drawLine(color, androidx.compose.ui.geometry.Offset(pad, pad), androidx.compose.ui.geometry.Offset(pad, pad + 50f), strokeWidth * 2)
+                            
+                            drawLine(color, androidx.compose.ui.geometry.Offset(size.width - pad, pad), androidx.compose.ui.geometry.Offset(size.width - pad - 50f, pad), strokeWidth * 2)
+                            drawLine(color, androidx.compose.ui.geometry.Offset(size.width - pad, pad), androidx.compose.ui.geometry.Offset(size.width - pad, pad + 50f), strokeWidth * 2)
+                        }
+                        
+                        val infiniteTransition = rememberInfiniteTransition()
+                        val scanLineY by infiniteTransition.animateFloat(
+                            initialValue = 0.1f,
+                            targetValue = 0.9f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(2000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            )
+                        )
+                        
+                        Box(
+                            Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(2.dp)
+                                .align(Alignment.TopCenter)
+                                .offset(y = 280.dp * scanLineY)
+                                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFFF472B6), Color.Transparent)))
+                        )
+                        
+                        if (isProcessing) {
+                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.6f)), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = EmeraldMain)
+                            }
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color(0xFFF472B6))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Esperando permisos...", color = Color.White.copy(0.5f), fontSize = 10.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                Button(
+                    onClick = onScanManual,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Rounded.Edit, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("ENTRADA MANUAL", fontWeight = FontWeight.Bold)
+                }
+                
+                TextButton(onClick = onDismiss) {
+                    Text("CANCELAR", color = Color.White.copy(0.5f))
+                }
+            }
+        }
     }
 }
 

@@ -11,8 +11,8 @@ android {
         applicationId = "com.sagon.prim"
         minSdk = 24
         targetSdk = 36
-        versionCode = 15
-        versionName = "15.0"
+        versionCode = 17
+        versionName = "17.0 Platinum"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,6 +76,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // ML Kit
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
     // JSoup para parsear HTML si lo necesitas
     implementation("org.jsoup:jsoup:1.16.1")
 
@@ -84,6 +88,12 @@ dependencies {
 
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+
+    // CameraX
+    val camerax_version = "1.3.4"
+    implementation("androidx.camera:camera-camera2:$camerax_version")
+    implementation("androidx.camera:camera-lifecycle:$camerax_version")
+    implementation("androidx.camera:camera-view:$camerax_version")
 
     // Evitar conflictos de annotations
     implementation("androidx.annotation:annotation:1.7.0")
