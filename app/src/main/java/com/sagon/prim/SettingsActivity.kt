@@ -85,7 +85,7 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("CONFIGURACIÓN LUXE", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp), color = SettingsPalette.EmeraldMain)
+                            Text("CONFIGURACIÓN", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp), color = SettingsPalette.EmeraldMain)
                             Text("SISTEMA DE PREDICCIÓN V17", style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp), color = Color.White.copy(0.4f))
                         }
                     },
@@ -147,11 +147,11 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
 
                             repeat(newCount) { i ->
                                 val nums = (pool.shuffled().take(4) + generateSequence { Random.nextInt(1, 50) }.filter { it !in pool }.take(2).toList()).sorted()
-                                list.add(0, Combination(System.nanoTime() + i, "EXTRA LUXE (Ajustes)", nums, Random.nextInt(0, 10), "COMBINACIÓN"))
+                                list.add(0, Combination(System.nanoTime() + i, "EXTRA (Ajustes)", nums, Random.nextInt(0, 10), "COMBINACIÓN"))
                             }
                             sharedPrefs.edit().putString("saved_combis", gson.toJson(list.take(100))).apply()
                         }
-                        Toast.makeText(context, "Sincronización Luxe Completa", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Sincronización Completa", Toast.LENGTH_SHORT).show()
                         onBack()
                     },
                     modifier = Modifier.fillMaxWidth().height(64.dp),

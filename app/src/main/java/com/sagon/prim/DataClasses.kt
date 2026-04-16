@@ -1,5 +1,8 @@
 package com.sagon.prim
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class LotteryResult(
     val date: String,
     val numbers: List<Int>,
@@ -9,6 +12,7 @@ data class LotteryResult(
     val isLive: Boolean
 )
 
+@Immutable
 data class Combination(
     val id: Long,
     val name: String,

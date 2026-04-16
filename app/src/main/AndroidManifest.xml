@@ -1,62 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.sagon.prim">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permisos necesarios -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera.any" />
 
     <application
-        android:allowBackup="true"
-        android:extractNativeLibs="true"
-        android:label="@string/app_name"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRIM"
-        android:usesCleartextTraffic="true">
+        tools:replace="android:allowBackup,android:fullBackupContent">
 
-        <!-- Actividad principal -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:theme="@style/Theme.PRIM">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Splash opcional -->
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true"
-            android:noHistory="true"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.PRIM" />
-
-        <!-- Otras actividades si las tienes -->
-        <activity
-            android:name=".ManualInputActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name=".HistoryActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
-
-        <!-- Receptor de WorkManager si lo usas -->
-        <receiver
-            android:name=".LotteryCheckWorkerReceiver"
-            android:enabled="true"
-            android:exported="false"/>
+            android:label="Ajustes"
+            android:theme="@style/Theme.PRIM" />
 
     </application>
 
