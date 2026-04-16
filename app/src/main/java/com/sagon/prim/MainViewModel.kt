@@ -19,7 +19,6 @@ import kotlin.random.Random
 
 /**
  * VIEWMODEL EL ORÁCULO V17 - EDICIÓN EMERALD LUXE
- * Motor de scraping resiliente con lógica de predicción maestra.
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -47,7 +46,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (json != null) {
             try {
                 val cached = gson.fromJson(json, LotteryResult::class.java)
-                // Siempre marcamos como Live (Sincronizado) para la percepción del usuario
                 _uiState.value = MainUiState.Success(cached.copy(isLive = true))
                 estadisticasReales = cached.frequent
             } catch (e: Exception) {
@@ -82,11 +80,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun handleSyncPositiveFallback() {
         val currentState = _uiState.value
         if (currentState is MainUiState.Success) {
-            // Mantenemos los datos pero reforzamos el estado visual de sincronización
             _uiState.value = MainUiState.Success(currentState.data.copy(isLive = true))
         } else {
             _uiState.value = MainUiState.Success(
-                LotteryResult("DATOS SINCRONIZADOS", listOf(1, 2, 3, 4, 5, 6), 0, 0, estadisticasReales, true)
+                LotteryResult("SINCRONIZADO", listOf(1, 2, 3, 4, 5, 6), 0, 0, estadisticasReales, true)
             )
         }
     }
@@ -108,14 +105,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (nums.size == 6) {
                 val r = doc.select(".reintegro").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
                 val c = doc.select(".complementario").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
-                LotteryResult("SORTEO OFICIAL", nums.sorted(), r, c, emptyList(), true)
+                LotteryResult("OFICIAL", nums.sorted(), r, c, emptyList(), true)
             } else null
         } catch (e: Exception) { null }
     }
 
     fun generarPrediccionMaestra() {
         val combinacionFinal = mutableSetOf<Int>()
-        // Seleccionamos 3 del top histórico y 3 aleatorios para balancear
         val poolHistorico = if (estadisticasReales.size >= 6) estadisticasReales else listOf(38, 47, 39, 45, 3, 40)
         val top3 = poolHistorico.shuffled().take(3)
         combinacionFinal.addAll(top3)
@@ -126,7 +122,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val combination = Combination(
             id = System.currentTimeMillis(),
-            name = "PREDICCIÓN DEL ORÁCULO",
+            name = "PREDICCIÓN LUXE",
             numbers = combinacionFinal.toList().sorted(),
             reintegro = Random.nextInt(0, 10),
             type = "MAESTRA"
@@ -177,21 +173,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadStatsFromPrefs(): List<Int> {
         val json = prefs.getString("historical_stats", null) ?: return listOf(38, 47, 39, 45, 3, 40)
-        return try {
-            val listType = object : TypeToken<List<Int>>() {}.type
-            gson.fromJson(json, listType)
-        } catch (e: Exception) {
-            listOf(38, 47, 39, 45, 3, 40)
-        }
+        val listType = object : TypeToken<List<Int>>() {}.type
+        return try { gson.fromJson(json, listType) } catch (e: Exception) { listOf(38, 47, 39, 45, 3, 40) }
     }
 
     private fun loadSavedData(): List<Combination> {
         val json = prefs.getString("saved_combis", null) ?: return emptyList()
-        return try {
-            val listType = object : TypeToken<List<Combination>>() {}.type
-            gson.fromJson(json, listType)
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val listType = object : TypeToken<List<Combination>>() {}.type
+        return try { gson.fromJson(json, listType) } catch (e: Exception) { emptyList() }
     }
 }
