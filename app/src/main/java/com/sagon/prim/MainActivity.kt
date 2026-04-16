@@ -1,6 +1,7 @@
 package com.sagon.prim
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,12 +41,12 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
-// --- IDENTIDAD VISUAL EMERALD LUXE V17 ---
+// --- IDENTIDAD VISUAL EMERALD LUXE V17 (ESTRICTO) ---
 val EmeraldMain = Color(0xFF10B981)
 val EmeraldSurface = Color(0xFF064E3B)
 val GoldLuxe = Color(0xFFFDE047)
 val DeepGreenGradient = listOf(Color(0xFF064E3B), Color(0xFF022C22))
-val WarmOverlay = Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(0.7f)))
+val LuxeCardBackground = Color(0xFF1F2937).copy(alpha = 0.4f)
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -77,7 +80,7 @@ fun MainScreen(viewModel: MainViewModel) {
     var showManualSelector by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
 
-    // GESTIÓN LUXE DEL BOTÓN ATRÁS
+    // BLINDAJE BOTÓN ATRÁS CON DIÁLOGO LUXE
     BackHandler(enabled = true) {
         showExitDialog = true
     }
@@ -124,59 +127,95 @@ fun MainScreen(viewModel: MainViewModel) {
         ) { padding ->
             LazyColumn(
                 state = listState,
-                modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = PaddingValues(24.dp), 
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // SECCIÓN HERO
+                // SECCIÓN HERO: EL ORÁCULO
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(140.dp)
                             .clip(RoundedCornerShape(32.dp))
-                            .background(Brush.linearGradient(listOf(EmeraldMain.copy(0.2f), Color.Transparent)))
-                            .border(1.dp, EmeraldMain.copy(0.3f), RoundedCornerShape(32.dp)),
+                            .background(Brush.linearGradient(listOf(EmeraldMain.copy(0.15f), Color.Transparent)))
+                            .border(1.dp, EmeraldMain.copy(0.2f), RoundedCornerShape(32.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.AutoAwesome, null, tint = GoldLuxe, modifier = Modifier.size(32.dp))
-                            Text("EL ORÁCULO DE ESMERALDA", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 2.sp)
+                            Icon(Icons.Rounded.AutoAwesome, null, tint = GoldLuxe, modifier = Modifier.size(36.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "EL ORÁCULO DE ESMERALDA",
+                                color = Color.White,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 14.sp,
+                                letterSpacing = 2.sp
+                            )
                         }
                     }
                 }
 
-                // PANEL DE ACCIONES LUXE - LOS 3 BOTONES (Limpiar eliminado)
+                // PANEL DE ACCIONES LUXE: FILA ÚNICA DE 3 BOTONES
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        ActionButton("ELEGIR", Icons.Rounded.Edit, Color(0xFF60A5FA), Modifier.weight(1f)) {
+                        ActionButton(
+                            "ELEGIR",
+                            Icons.Rounded.Edit,
+                            Color(0xFF60A5FA),
+                            Modifier.weight(1f)
+                        ) {
                             showManualSelector = true
                         }
-                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1f)) {
+
+                        ActionButton(
+                            "PREDECIR",
+                            Icons.Rounded.AutoAwesome,
+                            GoldLuxe,
+                            Modifier.weight(1f)
+                        ) {
                             viewModel.generarPrediccionMaestra()
                         }
-                        ActionButton("AJUSTES", Icons.Rounded.Settings, Color(0xFFA78BFA), Modifier.weight(1f)) {
-                            val intent = android.content.Intent(context, SettingsActivity::class.java)
-                            context.startActivity(intent)
+
+                        ActionButton(
+                            "AJUSTES",
+                            Icons.Rounded.Settings,
+                            Color(0xFFA78BFA),
+                            Modifier.weight(1f)
+                        ) {
+                            context.startActivity(Intent(context, SettingsActivity::class.java))
                         }
                     }
                 }
 
-                // RESULTADO EN VIVO
+                // RESULTADO EN VIVO (ULTIMO SORTEO)
                 item {
                     when (val state = uiState) {
                         is MainUiState.Success -> {
                             Card(
-                                modifier = Modifier.fillMaxWidth().shadow(30.dp, spotColor = EmeraldMain),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(30.dp, spotColor = EmeraldMain, ambientColor = EmeraldMain),
                                 shape = RoundedCornerShape(32.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.05f)),
                                 border = BorderStroke(1.dp, EmeraldMain.copy(0.2f))
                             ) {
-                                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("ÚLTIMO SORTEO OFICIAL", color = EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 3.sp)
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        "ÚLTIMO SORTEO OFICIAL",
+                                        color = EmeraldMain,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp,
+                                        letterSpacing = 3.sp
+                                    )
                                     Spacer(modifier = Modifier.height(24.dp))
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -190,16 +229,27 @@ fun MainScreen(viewModel: MainViewModel) {
                                 }
                             }
                         }
-                        else -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().clip(CircleShape), color = EmeraldMain)
+                        else -> LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().clip(CircleShape),
+                            color = EmeraldMain,
+                            trackColor = EmeraldSurface
+                        )
                     }
                 }
 
-                // NÚMEROS DE ORO
+                // NÚMEROS DE ORO (TENDENCIAS)
                 item {
                     if (uiState is MainUiState.Success) {
                         val stats = (uiState as MainUiState.Success).data.frequent
                         Column {
-                            Text("TENDENCIAS DE ORO", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp, modifier = Modifier.padding(bottom = 16.dp))
+                            Text(
+                                "TENDENCIAS DE ORO",
+                                color = GoldLuxe,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp,
+                                letterSpacing = 2.sp,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -211,9 +261,16 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // HISTORIAL
+                // SECCIÓN HISTORIAL
                 item {
-                    Text("JUGADAS GUARDADAS", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp)
+                    Text(
+                        "JUGADAS GUARDADAS",
+                        color = Color.White.copy(0.5f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        letterSpacing = 2.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
 
                 items(savedCombinations) { combination ->
@@ -224,7 +281,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
         if (confettiTrigger > 0) KonfettiView(modifier = Modifier.fillMaxSize(), parties = listOf(party))
 
-        // DIÁLOGOS
+        // DIÁLOGOS DE INTERFAZ
         if (showManualSelector) {
             ManualEntryDialog(
                 onDismiss = { showManualSelector = false },
@@ -241,6 +298,35 @@ fun MainScreen(viewModel: MainViewModel) {
     }
 }
 
+// --- COMPONENTES ATÓMICOS DE DISEÑO LUXE ---
+
+@Composable
+fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(95.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = Color.White.copy(0.06f),
+        border = BorderStroke(1.dp, color.copy(0.3f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(26.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = text,
+                color = Color.White,
+                fontWeight = FontWeight.Black,
+                fontSize = 10.sp,
+                letterSpacing = 1.sp
+            )
+        }
+    }
+}
+
 @Composable
 fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
@@ -249,11 +335,25 @@ fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
             colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
             border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
         ) {
-            Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Icon(Icons.Rounded.Logout, null, tint = EmeraldMain, modifier = Modifier.size(48.dp))
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("¿DESEA SALIR?", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = (-1).sp)
-                Text("El Oráculo dejará de sincronizar.", color = Color.White.copy(0.6f), fontSize = 14.sp)
+                Text(
+                    "¿DESEA SALIR?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 20.sp,
+                    letterSpacing = (-1).sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "El Oráculo dejará de sincronizar.",
+                    color = Color.White.copy(0.6f),
+                    fontSize = 14.sp
+                )
                 Spacer(modifier = Modifier.height(32.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
@@ -277,7 +377,7 @@ fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 fun GoldenBall(num: String) {
     val infiniteTransition = rememberInfiniteTransition(label = "gold")
     val glowScale by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 1.1f,
+        initialValue = 1f, targetValue = 1.12f,
         animationSpec = infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "glow"
     )
@@ -292,27 +392,6 @@ fun GoldenBall(num: String) {
         contentAlignment = Alignment.Center
     ) {
         Text(num, color = GoldLuxe, fontSize = 14.sp, fontWeight = FontWeight.Black)
-    }
-}
-
-@Composable
-fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(90.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = Color.White.copy(0.06f),
-        border = BorderStroke(1.dp, color.copy(0.3f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp, letterSpacing = 1.sp)
-        }
     }
 }
 
@@ -338,12 +417,29 @@ fun CombinationRow(combination: Combination, onDelete: (Long) -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.03f)),
         border = BorderStroke(1.dp, Color.White.copy(0.08f))
     ) {
-        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(combination.type, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 2.sp)
-                Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    combination.type,
+                    color = GoldLuxe,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                    letterSpacing = 2.sp
+                )
+                Row(
+                    modifier = Modifier.padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                     combination.numbers.forEach { num ->
-                        Text(num.toString(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(
+                            num.toString(),
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
                     }
                 }
             }
@@ -355,7 +451,12 @@ fun CombinationRow(combination: Combination, onDelete: (Long) -> Unit) {
                     .border(1.dp, EmeraldMain.copy(0.3f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(combination.reintegro.toString(), color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                Text(
+                    combination.reintegro.toString(),
+                    color = EmeraldMain,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 14.sp
+                )
             }
             IconButton(onClick = { onDelete(combination.id) }) {
                 Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.2f))
@@ -377,17 +478,30 @@ fun ManualEntryDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Unit) {
             border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
         ) {
             Column(
-                modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("ELEGIR JUGADA", color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text(
+                    "ELEGIR JUGADA",
+                    color = EmeraldMain,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 20.sp
+                )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     (1..49).forEach { n ->
                         val isSel = selectedNums.contains(n)
                         Surface(
-                            onClick = { if(isSel) selectedNums -= n else if(selectedNums.size < 6) selectedNums += n },
+                            onClick = {
+                                if(isSel) selectedNums -= n
+                                else if(selectedNums.size < 6) selectedNums += n
+                            },
                             modifier = Modifier.padding(4.dp).size(36.dp),
                             shape = CircleShape,
                             color = if(isSel) EmeraldMain else Color.Black.copy(0.3f),
@@ -403,7 +517,10 @@ fun ManualEntryDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text("REINTEGRO", color = EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Row(modifier = Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     (0..9).forEach { r ->
                         val isSel = selectedR == r
                         Surface(
