@@ -32,20 +32,22 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
 
         if (!isDrawDay) return Result.success()
 
-        try {
-            val url = "https://www.combinacionganadora.com/primitiva/"
-            val doc = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .timeout(15000)
-                .get()
-
-            val result = extractResult(doc)
-
-            if (result == null || result.numbers.isEmpty()) {
-                return Result.failure()
+        return try {
+            val result = retry {
+                val url = "https://www.combinacionganadora.com/primitiva/"
+                val doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .timeout(20000)
+                    .get()
+                extractResult(doc)
             }
 
-            val frequent = fetchLiveFrequencies()
+            if (result == null || result.numbers.isEmpty()) {
+                Log.e("PRIM_WORKER", "No se pudo obtener el resultado tras reintentos")
+                return Result.retry() // WorkManager reintentará más tarde
+            }
+
+            val frequent = retry { fetchLiveFrequencies() } ?: emptyList()
             val finalResult = if (frequent.isNotEmpty()) result.copy(frequent = frequent) else result
 
             sharedPreferences.edit().putString("last_lottery_result", Gson().toJson(finalResult)).apply()
@@ -64,11 +66,24 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
                 sendNotification(aciertosMap)
             }
 
-            return Result.success()
+            Result.success()
         } catch (e: Exception) {
-            Log.e("PRIM_WORKER", "Error: ${e.message}")
-            return Result.failure()
+            Log.e("PRIM_WORKER", "Error crítico: ${e.message}")
+            Result.retry()
         }
+    }
+
+    private suspend fun <T> retry(times: Int = 3, block: suspend () -> T?): T? {
+        repeat(times) { i ->
+            try {
+                val res = block()
+                if (res != null) return res
+            } catch (e: Exception) {
+                Log.w("PRIM_WORKER", "Reintento ${i+1} fallido")
+            }
+            if (i < times - 1) kotlinx.coroutines.delay(2000L * (i + 1))
+        }
+        return null
     }
 
     private fun extractResult(doc: Document): LotteryResult? {

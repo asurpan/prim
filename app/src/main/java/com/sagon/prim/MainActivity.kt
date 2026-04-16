@@ -126,10 +126,14 @@ fun MainScreen(viewModel: MainViewModel) {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, PinkLuxe, Modifier.weight(1f), "ESCANEO IA") { showTicketReader = true }
-                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "TOP FREQ. + 2 ALEAT.") { viewModel.generarPrediccionMaestra() }
-                        ActionButton("AJUSTES", Icons.Rounded.Settings, Color(0xFFA78BFA), Modifier.weight(1f)) { /* Ajustes */ }
+                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1f), "ESTADÍSTICA") { viewModel.generarPrediccionMaestra() }
+                        ActionButton("AJUSTES", Icons.Rounded.Settings, Color(0xFFA78BFA), Modifier.weight(1f), "APP CONFIG") { /* Ajustes */ }
                     }
                 }
 
@@ -347,12 +351,35 @@ fun GoldenBall(num: String, onClick: () -> Unit) {
 
 @Composable
 fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, detail: String? = null, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.height(90.dp), shape = RoundedCornerShape(24.dp), color = Color.White.copy(0.06f), border = BorderStroke(1.dp, color.copy(0.2f))) {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(26.dp))
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp)
-            if (detail != null) Text(detail, color = color.copy(0.5f), fontSize = 7.sp, fontWeight = FontWeight.Bold)
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(85.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White.copy(0.06f),
+        border = BorderStroke(1.dp, color.copy(0.2f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = text,
+                color = Color.White,
+                fontWeight = FontWeight.Black,
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = detail ?: " ", // Espacio en blanco para mantener altura si no hay detalle
+                color = color.copy(0.5f),
+                fontSize = 7.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
         }
     }
 }

@@ -42,6 +42,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         syncWithOfficialWeb()
     }
 
+    // Sistema de reintento robusto para asegurar conexión perfecta
+    private suspend fun <T> retry(times: Int = 2, block: suspend () -> T?): T? {
+        repeat(times) { i ->
+            try {
+                val result = block()
+                if (result != null) return result
+            } catch (e: Exception) {
+                Log.w("PRIM_CONN", "Intento ${i + 1} fallido: ${e.message}")
+            }
+            if (i < times - 1) kotlinx.coroutines.delay(1500L * (i + 1))
+        }
+        return null
+    }
+
     private fun loadLastResult() {
         val json = prefs.getString("last_lottery_result", null)
         if (json != null) {
@@ -69,23 +83,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (_uiState.value !is MainUiState.Success) {
                     _uiState.value = MainUiState.Loading
                 }
+                
                 val result = withContext(Dispatchers.IO) {
-                    fetchOfficial() ?: fetchOfficialSpecific() ?: fetchCombinacionGanadora()
+                    // Intento en cascada con reintentos individuales para máxima fiabilidad
+                    retry { fetchOfficial() } 
+                        ?: retry { fetchOfficialSpecific() } 
+                        ?: retry { fetchCombinacionGanadora() }
                 }
 
-                if (result != null) {
-                    val stats = withContext(Dispatchers.IO) { fetchLiveFrequencies() }
+                if (result != null && result.numbers.size >= 6) {
+                    val stats = withContext(Dispatchers.IO) { 
+                        retry { fetchLiveFrequencies() } ?: emptyList() 
+                    }
                     val validatedStats = ensureTwelve(if (stats.isEmpty()) estadisticasReales else stats)
                     val finalResult = result.copy(frequent = validatedStats)
+                    
                     estadisticasReales = validatedStats
                     _uiState.value = MainUiState.Success(finalResult.copy(isLive = true))
                     persistResult(finalResult)
                     saveStatsToPrefs(validatedStats)
                 } else {
-                    _uiState.value = MainUiState.Error("Servidores ocupados.")
+                    _uiState.value = MainUiState.Error("Servidores saturados. Inténtelo de nuevo.")
                 }
             } catch (e: Exception) {
-                _uiState.value = MainUiState.Error("Sin conexión.")
+                Log.e("PRIM_LUXE", "Sync falló: ${e.message}")
+                _uiState.value = MainUiState.Error("Sin conexión o red inestable.")
             }
         }
     }
