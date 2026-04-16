@@ -2,6 +2,7 @@ package com.sagon.prim
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,15 +12,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.util.*
 import kotlin.random.Random
 
-/**
- * VIEWMODEL EL ORÁCULO V17 - EDICIÓN EMERALD LUXE
- */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("prim_luxe_prefs", Context.MODE_PRIVATE)
@@ -36,9 +35,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var estadisticasReales: List<Int> = loadStatsFromPrefs()
 
+    // ESCUCHADOR DE CAMBIOS EN DISCO
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "saved_combis") {
+            _savedCombinations.value = loadSavedData()
+        }
+    }
+
     init {
         loadLastResult()
         syncWithOfficialWeb()
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
     }
 
     private fun loadLastResult() {
@@ -49,7 +61,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.value = MainUiState.Success(cached.copy(isLive = true))
                 estadisticasReales = cached.frequent
             } catch (e: Exception) {
-                Log.e("PRIM_DEBUG", "Error de lectura caché: ${e.message}")
+                Log.e("PRIM_DEBUG", "Error caché: ${e.message}")
             }
         }
     }
@@ -62,29 +74,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val frecuenciasVivas = fetchLiveFrequencies()
                     ultimoSorteo?.copy(frequent = frecuenciasVivas.ifEmpty { estadisticasReales })
                 }
-
                 if (result != null) {
                     estadisticasReales = result.frequent
                     _uiState.value = MainUiState.Success(result.copy(isLive = true))
                     persistResult(result)
                     saveStatsToPrefs(result.frequent)
-                } else {
-                    handleSyncPositiveFallback()
                 }
             } catch (e: Exception) {
-                handleSyncPositiveFallback()
+                Log.e("PRIM_DEBUG", "Error sync: ${e.message}")
             }
-        }
-    }
-
-    private fun handleSyncPositiveFallback() {
-        val currentState = _uiState.value
-        if (currentState is MainUiState.Success) {
-            _uiState.value = MainUiState.Success(currentState.data.copy(isLive = true))
-        } else {
-            _uiState.value = MainUiState.Success(
-                LotteryResult("SINCRONIZADO", listOf(1, 2, 3, 4, 5, 6), 0, 0, estadisticasReales, true)
-            )
         }
     }
 
@@ -111,63 +109,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun generarPrediccionMaestra() {
-        val combinacionFinal = mutableSetOf<Int>()
-        
-        // poolHistorico contiene los números con más apariciones obtenidos de la web
-        val poolHistorico = if (estadisticasReales.size >= 12) {
-            estadisticasReales
-        } else if (estadisticasReales.isNotEmpty()) {
-            estadisticasReales + listOf(38, 47, 39, 45, 3, 40, 23, 11, 41, 30, 7, 15)
-        } else {
-            listOf(38, 47, 39, 45, 3, 40, 23, 11, 41, 30, 7, 15)
-        }.distinct()
+        viewModelScope.launch(Dispatchers.Default) {
+            val numExtra = prefs.getInt("num_extra_gen", 0)
+            val totalGeneraciones = 1 + numExtra
+            val poolHistorico = if (estadisticasReales.size >= 12) estadisticasReales else estadisticasReales + listOf(38, 47, 39, 45, 3, 40)
 
-        // El Oráculo elige los 4 números más probables del pool de apariciones
-        val masProbables = poolHistorico.shuffled().take(4)
-        combinacionFinal.addAll(masProbables)
+            val nuevas = mutableListOf<Combination>()
+            repeat(totalGeneraciones) { i ->
+                val nums = (poolHistorico.shuffled().take(4) + generateSequence { Random.nextInt(1, 50) }.filter { it !in poolHistorico }.take(2).toList()).sorted()
+                nuevas.add(Combination(id = System.nanoTime() + i, name = if (i == 0) "PREDICCIÓN MAESTRA" else "EXTRA LUXE", numbers = nums, reintegro = Random.nextInt(0, 10), type = "COMBINACIÓN"))
+            }
 
-        // Completa con 2 números aleatorios para mantener la frescura del sorteo
-        while (combinacionFinal.size < 6) {
-            combinacionFinal.add(Random.nextInt(1, 50))
+            _savedCombinations.update { current ->
+                val updated = (nuevas + current).take(100)
+                persistToDisk(updated)
+                updated
+            }
+            withContext(Dispatchers.Main) { _confettiTrigger.value += 1 }
         }
-
-        val combination = Combination(
-            id = System.currentTimeMillis(),
-            name = "PREDICCIÓN LUXE",
-            numbers = combinacionFinal.toList().sorted(),
-            reintegro = Random.nextInt(0, 10),
-            type = "MAESTRA"
-        )
-        saveNewCombination(combination)
-        _confettiTrigger.value += 1
     }
 
     fun guardarJugadaManual(numeros: List<Int>, reintegro: Int) {
-        val combination = Combination(
-            id = System.currentTimeMillis(),
-            name = "JUGADA PERSONAL",
-            numbers = numeros.sorted(),
-            reintegro = reintegro,
-            type = "MANUAL"
-        )
-        saveNewCombination(combination)
-    }
-
-    private fun saveNewCombination(combi: Combination) {
-        val updated = (listOf(combi) + _savedCombinations.value).take(50)
-        _savedCombinations.value = updated
-        persistToDisk(updated)
+        viewModelScope.launch(Dispatchers.Default) {
+            val newCombination = Combination(
+                id = System.nanoTime(),
+                name = "JUGADA PERSONAL",
+                numbers = numeros.sorted(),
+                reintegro = reintegro,
+                type = "MANUAL"
+            )
+            _savedCombinations.update { current ->
+                val updated = (listOf(newCombination) + current).take(100)
+                persistToDisk(updated)
+                updated
+            }
+        }
     }
 
     fun deleteEntry(id: Long) {
-        val updated = _savedCombinations.value.filter { it.id != id }
-        _savedCombinations.value = updated
-        persistToDisk(updated)
-    }
-
-    fun clearAll() {
-        _savedCombinations.value = emptyList()
-        persistToDisk(emptyList())
+        _savedCombinations.update { current ->
+            val updated = current.filter { it.id != id }
+            persistToDisk(updated)
+            updated
+        }
     }
 
     private fun persistToDisk(list: List<Combination>) {
@@ -184,13 +168,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadStatsFromPrefs(): List<Int> {
         val json = prefs.getString("historical_stats", null) ?: return listOf(38, 47, 39, 45, 3, 40)
-        val listType = object : TypeToken<List<Int>>() {}.type
-        return try { gson.fromJson(json, listType) } catch (e: Exception) { listOf(38, 47, 39, 45, 3, 40) }
+        return try { gson.fromJson(json, object : TypeToken<List<Int>>() {}.type) } catch (e: Exception) { listOf(38, 47, 39, 45, 3, 40) }
     }
 
     private fun loadSavedData(): List<Combination> {
         val json = prefs.getString("saved_combis", null) ?: return emptyList()
-        val listType = object : TypeToken<List<Combination>>() {}.type
-        return try { gson.fromJson(json, listType) } catch (e: Exception) { emptyList() }
+        return try { gson.fromJson(json, object : TypeToken<List<Combination>>() {}.type) } catch (e: Exception) { emptyList() }
     }
 }
