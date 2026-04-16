@@ -179,7 +179,26 @@ fun MainScreen(viewModel: MainViewModel) {
                                 }
                             }
                         }
-                        else -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().clip(CircleShape), color = EmeraldMain)
+                        is MainUiState.Error -> {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Rounded.ErrorOutline, null, tint = Color.Red, modifier = Modifier.size(32.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(state.message, color = Color.White.copy(0.7f), fontSize = 12.sp, textAlign = TextAlign.Center)
+                                TextButton(onClick = { viewModel.syncWithOfficialWeb() }) {
+                                    Text("REINTENTAR", color = EmeraldMain, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        MainUiState.Loading -> {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().clip(CircleShape), color = EmeraldMain)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Sincronizando con Loterías...", color = Color.White.copy(0.4f), fontSize = 10.sp)
+                            }
+                        }
                     }
                 }
 

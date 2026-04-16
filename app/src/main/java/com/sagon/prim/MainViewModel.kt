@@ -79,9 +79,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = MainUiState.Success(result.copy(isLive = true))
                     persistResult(result)
                     saveStatsToPrefs(result.frequent)
+                } else {
+                    // Si no hay caché previa, mostramos error
+                    if (_uiState.value is MainUiState.Loading) {
+                        _uiState.value = MainUiState.Error("No se pudieron obtener resultados. Revisa tu conexión.")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("PRIM_DEBUG", "Error sync: ${e.message}")
+                if (_uiState.value is MainUiState.Loading) {
+                    _uiState.value = MainUiState.Error("Fallo de sincronización: ${e.message}")
+                }
             }
         }
     }
@@ -89,28 +97,64 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun fetchLiveFrequencies(): List<Int> {
         return try {
             val doc = Jsoup.connect("https://www.loteriadehoy.com/primitiva/frecuencia-de-numeros/")
-                .userAgent("Mozilla/5.0").timeout(15000).get()
-            doc.select(".bola, .num, .numero").mapNotNull { it.text().toIntOrNull() }
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .timeout(15000).get()
+            doc.select(".bola, .num, .numero, .result-number").mapNotNull { it.text().trim().toIntOrNull() }
                 .filter { it in 1..49 }.distinct().take(18)
         } catch (e: Exception) { emptyList() }
     }
 
     private fun fetchLastDraw(): LotteryResult? {
-        return try {
-            val doc = Jsoup.connect("https://www.loteriadehoy.com/primitiva/")
-                .userAgent("Mozilla/5.0").timeout(15000).get()
-            
-            // Intentar extraer la fecha del sorteo
-            val dateText = doc.select(".fecha, .date, .sorteo-info").firstOrNull()?.text() 
-                ?: "ÚLTIMO SORTEO"
+        val sources = listOf(
+            "https://www.elmundo.es/loterias/primitiva.html",
+            "https://www.loteriadehoy.com/primitiva/",
+            "https://www.labrujadeoro.es/primitiva-ultimos-resultados.htm"
+        )
 
-            val nums = doc.select(".bola, .num").mapNotNull { it.text().toIntOrNull() }.filter { it in 1..49 }.distinct().take(6)
-            if (nums.size == 6) {
-                val r = doc.select(".reintegro").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
-                val c = doc.select(".complementario").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
-                LotteryResult(dateText.uppercase(), nums.sorted(), r, c, emptyList(), true)
-            } else null
-        } catch (e: Exception) { null }
+        for (url in sources) {
+            try {
+                val doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .timeout(10000)
+                    .get()
+
+                if (url.contains("elmundo")) {
+                    val dateText = doc.select(".ue-c-lottery-raffle__headline-date").firstOrNull()?.text() ?: "ÚLTIMO SORTEO"
+                    val nums = doc.select(".ue-c-lottery-raffle__prices-number--highlighted")
+                        .mapNotNull { it.text().trim().toIntOrNull() }
+                    
+                    if (nums.size >= 8) { // 6 principal + 1 complementario + 1 reintegro
+                        val mainNums = nums.take(6).sorted()
+                        val complementario = nums[6]
+                        val reintegro = nums[7]
+                        return LotteryResult(dateText.uppercase(), mainNums, reintegro, complementario, emptyList(), true)
+                    }
+                } else if (url.contains("loteriadehoy")) {
+                    val dateText = doc.select(".fecha, .date, .sorteo-info, h2").firstOrNull { it.text().contains(Regex("\\d")) }?.text() ?: "ÚLTIMO SORTEO"
+                    val nums = doc.select(".bola, .num, .numero, .result-number")
+                        .mapNotNull { it.text().trim().toIntOrNull() }
+                        .filter { it in 1..49 }.distinct().take(6)
+                    
+                    if (nums.size == 6) {
+                        val r = doc.select(".reintegro, .r, .reinte").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
+                        val c = doc.select(".complementario, .comp, .c").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
+                        return LotteryResult(dateText.uppercase(), nums.sorted(), r, c, emptyList(), true)
+                    }
+                } else if (url.contains("labrujadeoro")) {
+                    val resultBlock = doc.selectFirst("div.resultados.primitiva.ultima") ?: doc.selectFirst(".resultados-primitiva")
+                    val nums = resultBlock?.select("li.numero, .bola, .num")?.mapNotNull { it.text().trim().toIntOrNull() }?.filter { it in 1..49 }?.distinct()?.take(6)
+                    
+                    if (nums != null && nums.size == 6) {
+                        val r = resultBlock?.selectFirst("li.reintegro, .reintegro")?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
+                        val date = doc.select(".fecha-sorteo, .fecha, h1").firstOrNull()?.text() ?: "ÚLTIMO SORTEO"
+                        return LotteryResult(date.uppercase(), nums.sorted(), r, 0, emptyList(), true)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("PRIM_DEBUG", "Fallo fuente $url: ${e.message}")
+            }
+        }
+        return null
     }
 
     fun generarPrediccionMaestra() {

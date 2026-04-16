@@ -15,6 +15,7 @@ import org.jsoup.Jsoup
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -48,7 +49,7 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
         }
 
         try {
-            val html = fetchHtml("https://www.labrujadeoro.es/primitiva-ultimos-resultados.htm")
+            val html = fetchHtml("https://www.elmundo.es/loterias/primitiva.html")
             val winningNumbers = extractWinningNumbers(html)
 
             if (winningNumbers.isEmpty()) {
@@ -74,9 +75,13 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
     private fun fetchHtml(url: String): String {
-        val client = OkHttpClient()
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
         val request = Request.Builder()
             .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             .build()
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) throw IOException("Unexpected code $response")
@@ -85,9 +90,14 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
 
     private fun extractWinningNumbers(html: String): List<Int> {
         val doc = Jsoup.parse(html)
-        val resultBlock = doc.selectFirst("div.resultados.primitiva.ultima")
-        val numberElements = resultBlock?.select("li.numero")
-        return numberElements?.mapNotNull { it.text().toIntOrNull() }?.sorted() ?: emptyList()
+        val nums = doc.select(".ue-c-lottery-raffle__prices-number--highlighted")
+            .mapNotNull { it.text().trim().toIntOrNull() }
+        
+        return if (nums.size >= 6) {
+            nums.take(6).sorted()
+        } else {
+            emptyList()
+        }
     }
 
     private fun loadCombinations(context: Context): List<LotteryCombination> {
