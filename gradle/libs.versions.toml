@@ -13,7 +13,7 @@ konfetti = "2.0.5"
 
 core = "3.5.2"
 
-jsoup = "1.17.2"
+jsoup = "1.22.1"
 
 coreKtx = "1.13.1"
 
