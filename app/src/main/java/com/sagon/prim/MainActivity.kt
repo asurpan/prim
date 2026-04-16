@@ -6,10 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +48,7 @@ val LuxeGreenGradient = listOf(Color(0xFF10B981), Color(0xFF059669))
 val GlassBorder = Color(0xFF10B981).copy(alpha = 0.2f)
 
 class MainActivity : ComponentActivity() {
+    // Referencia al ViewModel Senior
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -165,7 +164,7 @@ fun MainScreen(viewModel: MainViewModel) {
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // --- CUADRÍCULA DE ACCIONES (TRIPLE REDUNDANCIA UI) ---
+                // ITEM 0: GRID DE ACCIONES (Elegir, Historial, Ajustes, Enviar)
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -183,7 +182,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                 modifier = Modifier.weight(1f)
                             ) {
                                 scope.launch {
-                                    // Scroll automático al encabezado del historial
+                                    // Scroll automático al encabezado del historial (índice 3)
                                     listState.animateScrollToItem(index = 3)
                                 }
                             }
@@ -202,93 +201,48 @@ fun MainScreen(viewModel: MainViewModel) {
                                 color = Color(0xFF34D399), 
                                 modifier = Modifier.weight(1f)
                             ) {
-                                val header = "✨ PRIMITIVA PRIM - MIS JUGADAS ✨\n" +
-                                             "--------------------------------\n"
                                 val body = savedCombinations.joinToString("\n") { 
                                     "${it.name}: ${it.numbers.joinToString("-")} [R:${it.reintegro}]" 
                                 }
-                                val footer = "\n--------------------------------\nGenerado con Prim Luxe"
-                                
                                 if (body.isNotEmpty()) {
-                                    val fullText = header + body + footer
                                     context.startActivity(Intent.createChooser(Intent().apply {
                                         action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, fullText)
+                                        putExtra(Intent.EXTRA_TEXT, "MIS JUGADAS PRIMITIVA:\n$body")
                                         type = "text/plain"
-                                    }, "Compartir Jugadas"))
+                                    }, "Compartir"))
                                 }
                             }
                         }
                     }
                 }
 
-                // --- PANEL DE RESULTADOS (GLASSMORPHISM & LUXE) ---
+                // ITEM 1: PANEL DE RESULTADOS (Glassmorphism Luxe)
                 item {
                     when (val state = uiState) {
                         is MainUiState.Loading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp), 
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = EmeraldMain, strokeWidth = 3.dp)
+                            Box(modifier = Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = EmeraldMain)
                             }
                         }
                         is MainUiState.Success -> {
                             Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .shadow(30.dp, RoundedCornerShape(32.dp), ambientColor = EmeraldMain, spotColor = EmeraldMain),
+                                modifier = Modifier.fillMaxWidth().shadow(30.dp, RoundedCornerShape(32.dp), spotColor = EmeraldMain),
                                 shape = RoundedCornerShape(32.dp),
                                 colors = CardDefaults.cardColors(containerColor = EmeraldSurface.copy(alpha = 0.7f)),
                                 border = BorderStroke(1.dp, GlassBorder)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "ÚLTIMA COMBINACIÓN",
-                                        color = GoldLuxe,
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 3.sp
-                                        )
-                                    )
-                                    Text(
-                                        text = state.data.date.uppercase(),
-                                        color = Color.White.copy(alpha = 0.5f),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                                    )
-                                    
+                                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("ÚLTIMA COMBINACIÓN", color = GoldLuxe, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black, letterSpacing = 3.sp))
+                                    Text(state.data.date.uppercase(), color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.labelSmall)
                                     Spacer(modifier = Modifier.height(24.dp))
-                                    
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                                         state.data.numbers.forEach { NumberBall(it.toString(), "MAIN") }
                                         NumberBall(state.data.reintegro.toString(), "REINTEGRO")
                                     }
-                                    
                                     Spacer(modifier = Modifier.height(32.dp))
-                                    
-                                    Text(
-                                        text = "ESTADÍSTICA DE ORO",
-                                        color = EmeraldMain,
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            letterSpacing = 1.5.sp
-                                        )
-                                    )
+                                    Text("ESTADÍSTICA DE ORO", color = EmeraldMain, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp))
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(), 
-                                        horizontalArrangement = Arrangement.Center,
-                                        maxItemsInEachRow = 6
-                                    ) {
+                                    FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                         state.data.frequent.take(12).forEach { num ->
                                             NumberBall(num.toString(), "SMALL")
                                             Spacer(modifier = Modifier.width(4.dp))
@@ -303,7 +257,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // --- BOTÓN GENERADOR PRINCIPAL ---
+                // ITEM 2: BOTÓN GENERADOR PRINCIPAL
                 item {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
@@ -312,328 +266,152 @@ fun MainScreen(viewModel: MainViewModel) {
                     Button(
                         onClick = { viewModel.generateRandomCombination() },
                         interactionSource = interactionSource,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp)
-                            .scale(scale)
-                            .shadow(24.dp, RoundedCornerShape(20.dp), ambientColor = EmeraldMain, spotColor = EmeraldMain),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).scale(scale).shadow(24.dp, RoundedCornerShape(20.dp), spotColor = EmeraldMain),
                         shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues()
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Brush.horizontalGradient(LuxeGreenGradient)), 
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "COMBINACIÓN ALEATORIA",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Black,
-                                    color = Color(0xFF022C22),
-                                    letterSpacing = 1.sp
-                                )
-                            )
-                        }
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("GENERAR JUGADA MAESTRA", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
                     }
                 }
 
-                // --- HISTORIAL RECIENTE ---
+                // ITEM 3: CABECERA HISTORIAL (Punto de Anclaje de Scroll)
                 item {
                     Text(
-                        text = "HISTORIAL RECIENTE",
-                        color = Color.White.copy(alpha = 0.4f),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
-                        ),
+                        text = "HISTORIAL DE JUGADAS",
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black, letterSpacing = 4.sp),
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
-                items(savedCombinations, key = { it.id }) { item ->
-                    CombinationCard(item) { viewModel.deleteEntry(item.id) }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
+                // ITEM 4+: LISTA DE JUGADAS GUARDADAS
+                items(savedCombinations, key = { it.id }) { combination ->
+                    CombinationItem(combination, onDelete = { viewModel.deleteEntry(it) })
                 }
             }
-        }
-
-        // --- DIÁLOGOS DE SELECCIÓN Y AJUSTES ---
-        if (showManualDialog) {
-            ManualSelectionDialog(
-                onDismiss = { showManualDialog = false }, 
-                onSave = { n, r -> viewModel.addManualEntry("JUGADA MANUAL", n, r); showManualDialog = false }
-            )
-        }
-        
-        if (showSettingsDialog) {
-            SettingsDialog(
-                onDismiss = { showSettingsDialog = false }, 
-                onClear = { viewModel.clearAll(); showSettingsDialog = false }
-            )
         }
 
         if (confettiTrigger > 0) {
-            KonfettiView(
-                modifier = Modifier.fillMaxSize(),
-                parties = listOf(party)
+            KonfettiView(modifier = Modifier.fillMaxSize(), parties = listOf(party))
+        }
+
+        if (showManualDialog) {
+            ManualEntryDialog(
+                onDismiss = { showManualDialog = false },
+                onConfirm = { name, nums, r -> viewModel.addManualEntry(name, nums, r) }
+            )
+        }
+
+        if (showSettingsDialog) {
+            SettingsDialog(
+                onDismiss = { showSettingsDialog = false },
+                onClearAll = { viewModel.clearAll() }
             )
         }
     }
 }
 
-@Composable
-fun NumberBall(text: String, type: String) {
-    val size = if (type == "SMALL") 34.dp else 44.dp
-    val bgColor = when(type) { 
-        "REINTEGRO" -> Color(0xFFEF4444)
-        "SMALL" -> Color.Transparent 
-        else -> EmeraldMain 
-    }
-    val textColor = if (type == "SMALL") EmeraldMain else Color(0xFF022C22)
-    val borderStroke = if (type == "SMALL") BorderStroke(1.dp, GlassBorder) else null
-    
-    Box(
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(bgColor)
-            .then(if (borderStroke != null) Modifier.border(borderStroke, CircleShape) else Modifier),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = textColor,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Black,
-                fontSize = if (type == "SMALL") 11.sp else 18.sp
-            )
-        )
-    }
-}
+// --- COMPONENTES UI LUXE ---
 
 @Composable
-fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
+fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "actionScale")
+    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f)
 
-    Card(
-        modifier = modifier
-            .height(68.dp)
-            .scale(scale)
-            .clickable(interactionSource = interactionSource, indication = null) { onClick() }, 
-        shape = RoundedCornerShape(20.dp), 
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)), 
-        border = BorderStroke(1.dp, color.copy(alpha = 0.25f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(), 
-            horizontalAlignment = Alignment.CenterHorizontally, 
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(26.dp))
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = text.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Black,
-                    color = color,
-                    letterSpacing = 1.2.sp
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun CombinationCard(item: Combination, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(), 
-        shape = RoundedCornerShape(24.dp), 
-        colors = CardDefaults.cardColors(containerColor = EmeraldSurface.copy(alpha = 0.4f)), 
+    Surface(
+        onClick = onClick,
+        modifier = modifier.scale(scale),
+        shape = RoundedCornerShape(24.dp),
+        color = EmeraldSurface.copy(alpha = 0.5f),
         border = BorderStroke(1.dp, GlassBorder)
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp), 
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+        }
+    }
+}
+
+@Composable
+fun NumberBall(number: String, type: String) {
+    val size = if (type == "MAIN" || type == "REINTEGRO") 44.dp else 30.dp
+    val fontSize = if (type == "MAIN" || type == "REINTEGRO") 18.sp else 12.sp
+    val bgColor = if (type == "REINTEGRO" || type == "SMALL_R") Color(0xFFEF4444) else EmeraldMain
+    
+    Box(
+        modifier = Modifier.size(size).clip(CircleShape).background(Brush.radialGradient(listOf(bgColor.copy(alpha = 0.8f), bgColor))).border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(number, color = Color.White, fontSize = fontSize, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+fun CombinationItem(combination: Combination, onDelete: (Long) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.name.uppercase(), 
-                    color = GoldLuxe, 
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.5.sp
-                    )
-                )
+                Text(combination.name, color = EmeraldMain, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    item.numbers.forEach { 
-                        Text(
-                            text = "${it.toString().padStart(2, '0')} ", 
-                            color = Color.White, 
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 20.sp
-                            )
-                        ) 
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "R:${item.reintegro}", 
-                        color = Color(0xFFF87171), 
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black
-                        )
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    combination.numbers.forEach { NumberBall(it.toString(), "SMALL") }
+                    NumberBall(combination.reintegro.toString(), "SMALL_R")
                 }
             }
-            IconButton(onClick = onDelete) { 
-                Icon(Icons.Rounded.Delete, contentDescription = "Eliminar", tint = Color.White.copy(alpha = 0.25f))
+            IconButton(onClick = { onDelete(combination.id) }) {
+                Icon(Icons.Rounded.Delete, contentDescription = null, tint = Color.White.copy(alpha = 0.2f))
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManualSelectionDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Unit) {
-    var selN by remember { mutableStateOf(setOf<Int>()) }
-    var selR by remember { mutableStateOf(0) }
-    
+fun ManualEntryDialog(onDismiss: () -> Unit, onConfirm: (String, List<Int>, Int) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var numsText by remember { mutableStateOf("") }
+    var rText by remember { mutableStateOf("") }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = EmeraldSurface,
-        shape = RoundedCornerShape(32.dp),
-        tonalElevation = 8.dp,
-        title = {
-            Text(
-                text = "JUGADA MANUAL",
-                color = GoldLuxe,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
-            )
-        },
+        title = { Text("ELEGIR JUGADA", fontWeight = FontWeight.Black) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    text = "NÚMEROS (SELECCIONA 6)",
-                    color = Color.White.copy(0.5f), 
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(), 
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    for (i in 1..49) {
-                        val isSelected = selN.contains(i)
-                        Box(
-                            modifier = Modifier
-                                .padding(bottom = 8.dp)
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) EmeraldMain else Color.Transparent)
-                                .border(1.dp, EmeraldMain.copy(0.3f), CircleShape)
-                                .clickable { 
-                                    if (isSelected) selN -= i 
-                                    else if (selN.size < 6) selN += i 
-                                }, 
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = i.toString(), 
-                                color = if (isSelected) Color(0xFF022C22) else Color.White, 
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "REINTEGRO", 
-                    color = Color.White.copy(0.5f), 
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (i in 0..9) {
-                        val isSelected = selR == i
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) Color(0xFFEF4444) else Color.Transparent)
-                                .border(1.dp, Color(0xFFEF4444).copy(0.3f), CircleShape)
-                                .clickable { selR = i }, 
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = i.toString(), color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Apodo de la jugada") })
+                OutlinedTextField(value = numsText, onValueChange = { numsText = it }, label = { Text("6 números (sep. comas)") })
+                OutlinedTextField(value = rText, onValueChange = { rText = it }, label = { Text("Reintegro") })
             }
         },
-        confirmButton = { 
-            Button(
-                onClick = { onSave(selN.toList(), selR) }, 
-                enabled = selN.size == 6,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain, contentColor = Color(0xFF022C22)),
-                shape = RoundedCornerShape(12.dp)
-            ) { 
-                Text("GUARDAR JUGADA", fontWeight = FontWeight.Black) 
-            } 
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CANCELAR", color = EmeraldMain.copy(alpha = 0.7f))
-            }
+        confirmButton = {
+            Button(onClick = {
+                val nums = numsText.split(",").mapNotNull { it.trim().toIntOrNull() }
+                if (nums.size == 6) {
+                    onConfirm(name, nums, rText.toIntOrNull() ?: 0)
+                    onDismiss()
+                }
+            }) { Text("GUARDAR") }
         }
     )
 }
 
 @Composable
-fun SettingsDialog(onDismiss: () -> Unit, onClear: () -> Unit) {
+fun SettingsDialog(onDismiss: () -> Unit, onClearAll: () -> Unit) {
     AlertDialog(
-        onDismissRequest = onDismiss, 
-        containerColor = EmeraldSurface,
-        shape = RoundedCornerShape(28.dp),
-        title = {
-            Text(
-                text = "AJUSTES",
-                color = GoldLuxe,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-            )
-        },
-        text = { 
-            Column {
-                Text(
-                    text = "¿Deseas eliminar permanentemente todo el historial de jugadas?", 
-                    color = Color.White.copy(0.8f), 
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                OutlinedButton(
-                    onClick = onClear, 
-                    modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, Color.Red.copy(0.5f)),
-                    shape = RoundedCornerShape(12.dp)
-                ) { 
-                    Text("BORRAR TODO EL HISTORIAL", color = Color.Red, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)) 
-                } 
-            }
-        },
-        confirmButton = { 
-            TextButton(onClick = onDismiss) { 
-                Text("CERRAR", color = EmeraldMain, fontWeight = FontWeight.Bold) 
+        onDismissRequest = onDismiss,
+        title = { Text("AJUSTES", fontWeight = FontWeight.Black) },
+        text = { Text("¿Deseas borrar todo el historial de jugadas?") },
+        confirmButton = {
+            Button(onClick = { onClearAll(); onDismiss() }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
+                Text("BORRAR TODO")
             }
         }
     )
