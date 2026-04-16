@@ -99,11 +99,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return try {
             val doc = Jsoup.connect("https://www.loteriadehoy.com/primitiva/")
                 .userAgent("Mozilla/5.0").timeout(15000).get()
+            
+            // Intentar extraer la fecha del sorteo
+            val dateText = doc.select(".fecha, .date, .sorteo-info").firstOrNull()?.text() 
+                ?: "ÚLTIMO SORTEO"
+
             val nums = doc.select(".bola, .num").mapNotNull { it.text().toIntOrNull() }.filter { it in 1..49 }.distinct().take(6)
             if (nums.size == 6) {
                 val r = doc.select(".reintegro").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
                 val c = doc.select(".complementario").firstOrNull()?.text()?.filter { it.isDigit() }?.toIntOrNull() ?: 0
-                LotteryResult("OFICIAL", nums.sorted(), r, c, emptyList(), true)
+                LotteryResult(dateText.uppercase(), nums.sorted(), r, c, emptyList(), true)
             } else null
         } catch (e: Exception) { null }
     }

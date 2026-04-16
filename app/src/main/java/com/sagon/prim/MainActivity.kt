@@ -169,7 +169,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                 border = BorderStroke(1.dp, EmeraldMain.copy(0.2f))
                             ) {
                                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("ÚLTIMO SORTEO OFICIAL", color = EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 3.sp)
+                                    Text(state.data.date, color = EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 2.sp)
                                     Spacer(modifier = Modifier.height(24.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                                         state.data.numbers.forEach { NumberBall(it.toString(), EmeraldMain) }
