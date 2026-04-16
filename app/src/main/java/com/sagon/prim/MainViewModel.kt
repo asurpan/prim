@@ -112,10 +112,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun generarPrediccionMaestra() {
         val combinacionFinal = mutableSetOf<Int>()
-        val poolHistorico = if (estadisticasReales.size >= 6) estadisticasReales else listOf(38, 47, 39, 45, 3, 40)
-        val top3 = poolHistorico.shuffled().take(3)
-        combinacionFinal.addAll(top3)
+        
+        // poolHistorico contiene los números con más apariciones obtenidos de la web
+        val poolHistorico = if (estadisticasReales.size >= 12) {
+            estadisticasReales
+        } else if (estadisticasReales.isNotEmpty()) {
+            estadisticasReales + listOf(38, 47, 39, 45, 3, 40, 23, 11, 41, 30, 7, 15)
+        } else {
+            listOf(38, 47, 39, 45, 3, 40, 23, 11, 41, 30, 7, 15)
+        }.distinct()
 
+        // El Oráculo elige los 4 números más probables del pool de apariciones
+        val masProbables = poolHistorico.shuffled().take(4)
+        combinacionFinal.addAll(masProbables)
+
+        // Completa con 2 números aleatorios para mantener la frescura del sorteo
         while (combinacionFinal.size < 6) {
             combinacionFinal.add(Random.nextInt(1, 50))
         }
