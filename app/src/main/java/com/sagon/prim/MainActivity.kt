@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -40,7 +41,7 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
-// --- IDENTIDAD VISUAL EMERALD LUXE V17 (ESTRICTO) ---
+// --- IDENTIDAD VISUAL EMERALD LUXE V17 ---
 val EmeraldMain = Color(0xFF10B981)
 val EmeraldSurface = Color(0xFF064E3B)
 val GoldLuxe = Color(0xFFFDE047)
@@ -76,11 +77,9 @@ fun MainScreen(viewModel: MainViewModel) {
 
     var showManualSelector by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
 
-    // BLINDAJE BOTÓN ATRÁS
-    BackHandler(enabled = true) {
-        showExitDialog = true
-    }
+    BackHandler(enabled = true) { showExitDialog = true }
 
     val party = remember {
         Party(
@@ -97,19 +96,8 @@ fun MainScreen(viewModel: MainViewModel) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                "PRIMITIVA PRIM",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = (-1.5).sp
-                                ),
-                                color = EmeraldMain
-                            )
-                            Text(
-                                "SINCRO LUXE ACTIVA",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 4.sp),
-                                color = Color.White.copy(0.4f)
-                            )
+                            Text("PRIMITIVA PRIM", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp), color = EmeraldMain)
+                            Text("SINCRO LUXE ACTIVA", style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 4.sp), color = Color.White.copy(0.4f))
                         }
                     },
                     actions = {
@@ -128,16 +116,10 @@ fun MainScreen(viewModel: MainViewModel) {
                 contentPadding = PaddingValues(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // PANEL DE ACCIONES LUXE: FILA ÚNICA (OPTIMIZADA)
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ActionButton("ELEGIR", Icons.Rounded.Edit, Color(0xFF60A5FA), Modifier.weight(1f)) {
-                            showManualSelector = true
-                        }
-                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1f)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ActionButton("ELEGIR", Icons.Rounded.Edit, Color(0xFF60A5FA), Modifier.weight(1f)) { showManualSelector = true }
+                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "4 ÉXITOS + 2 AZAR", true, { showInfoDialog = true }) {
                             viewModel.generarPrediccionMaestra()
                         }
                         ActionButton("AJUSTES", Icons.Rounded.Settings, Color(0xFFA78BFA), Modifier.weight(1f)) {
@@ -146,7 +128,6 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // RESULTADO EN VIVO (ULTIMO SORTEO)
                 item {
                     when (val state = uiState) {
                         is MainUiState.Success -> {
@@ -159,11 +140,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text("ÚLTIMO SORTEO OFICIAL", color = EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 3.sp)
                                     Spacer(modifier = Modifier.height(24.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                                         state.data.numbers.forEach { NumberBall(it.toString(), EmeraldMain) }
                                         Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(0.1f)))
                                         NumberBall(state.data.reintegro.toString(), Color.Red)
@@ -175,39 +152,20 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // NÚMEROS DE ORO (MÁS APARICIONES)
                 item {
                     if (uiState is MainUiState.Success) {
                         val stats = (uiState as MainUiState.Success).data.frequent
                         Column {
-                            Text(
-                                "NÚMEROS CON MÁS APARICIONES HISTÓRICAS",
-                                color = GoldLuxe,
-                                fontWeight = FontWeight.Black,
-                                fontSize = 11.sp,
-                                letterSpacing = 1.sp,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
+                            Text("NÚMEROS CON MÁS APARICIONES HISTÓRICAS", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 16.dp))
+                            FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 stats.take(12).forEach { num -> GoldenBall(num.toString()) }
                             }
                         }
                     }
                 }
 
-                // SECCIÓN HISTORIAL
                 item {
-                    Text(
-                        "JUGADAS GUARDADAS",
-                        color = Color.White.copy(0.5f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        letterSpacing = 2.sp
-                    )
+                    Text("JUGADAS GUARDADAS", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 8.dp))
                 }
 
                 items(savedCombinations) { combination ->
@@ -218,42 +176,106 @@ fun MainScreen(viewModel: MainViewModel) {
 
         if (confettiTrigger > 0) KonfettiView(modifier = Modifier.fillMaxSize(), parties = listOf(party))
 
-        // DIÁLOGOS
-        if (showManualSelector) {
-            ManualEntryDialog(
-                onDismiss = { showManualSelector = false },
-                onSave = { n, r -> viewModel.guardarJugadaManual(n, r) }
-            )
-        }
+        if (showInfoDialog) AlgorithmHelpDialog { showInfoDialog = false }
+        if (showManualSelector) ManualEntryDialog({ showManualSelector = false }, { n, r -> viewModel.guardarJugadaManual(n, r) })
+        if (showExitDialog) LuxeExitDialog({ showExitDialog = false }, { (context as? Activity)?.finish() })
+    }
+}
 
-        if (showExitDialog) {
-            LuxeExitDialog(
-                onDismiss = { showExitDialog = false },
-                onConfirm = { (context as? Activity)?.finish() }
-            )
+@Composable
+fun CombinationRow(combination: Combination, onDelete: (Long) -> Unit) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.03f)),
+        border = BorderStroke(1.dp, Color.White.copy(0.08f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp), // Padding reducido para optimizar ancho
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(combination.type.replace("MAESTRA", "COMBINACIÓN"), color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 8.sp, letterSpacing = 1.sp)
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp) // Espaciado compacto
+                ) {
+                    combination.numbers.forEach { num ->
+                        Text(num.toString(), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+
+            // Reintegro (Compacto)
+            Box(
+                modifier = Modifier.size(28.dp).clip(CircleShape).background(EmeraldMain.copy(0.1f)).border(1.dp, EmeraldMain.copy(0.3f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(combination.reintegro.toString(), color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 12.sp)
+            }
+
+            // Acciones (Horizontal y compactas)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = {
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, "¡Mi combinación Primitiva Prim!: ${combination.numbers.joinToString("-")} | R: ${combination.reintegro}")
+                            type = "text/plain"
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, null))
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(Icons.Rounded.Share, null, tint = EmeraldMain, modifier = Modifier.size(18.dp))
+                }
+
+                IconButton(onClick = { onDelete(combination.id) }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(18.dp))
+                }
+            }
         }
     }
 }
 
-// --- COMPONENTES ATÓMICOS DE DISEÑO LUXE ---
+@Composable
+fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, detail: String? = null, showInfo: Boolean = false, onInfoClick: (() -> Unit)? = null, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier.height(105.dp), shape = RoundedCornerShape(28.dp), color = Color.White.copy(0.06f), border = BorderStroke(1.dp, color.copy(0.3f))) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (showInfo && onInfoClick != null) {
+                IconButton(onClick = onInfoClick, modifier = Modifier.align(Alignment.TopEnd).size(32.dp).padding(4.dp)) {
+                    Icon(Icons.Rounded.Info, null, tint = color.copy(0.5f), modifier = Modifier.size(16.dp))
+                }
+            }
+            Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp, letterSpacing = 1.sp)
+                if (detail != null) {
+                    Text(detail, color = color.copy(0.8f), fontWeight = FontWeight.Bold, fontSize = 7.5.sp, letterSpacing = 0.5.sp, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+        }
+    }
+}
 
 @Composable
-fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(90.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = Color.White.copy(0.06f),
-        border = BorderStroke(1.dp, color.copy(0.3f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(26.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp, letterSpacing = 1.sp)
+fun AlgorithmHelpDialog(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface), border = BorderStroke(1.dp, GoldLuxe.copy(0.3f))) {
+            Column(modifier = Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Rounded.AutoAwesome, null, tint = GoldLuxe, modifier = Modifier.size(40.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("FÓRMULA DE ÉXITO", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 2.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("Combinamos los 4 números con más apariciones históricas (ORO) con 2 números al azar para equilibrar estadística y suerte.", color = Color.White.copy(0.8f), fontSize = 14.sp, textAlign = TextAlign.Center, lineHeight = 20.sp)
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Text("ENTENDIDO", fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
@@ -261,27 +283,16 @@ fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifi
 @Composable
 fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
-            border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
-        ) {
+        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface), border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))) {
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Rounded.Logout, null, tint = EmeraldMain, modifier = Modifier.size(48.dp))
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("¿DESEA SALIR?", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = (-1).sp)
-                Text("El Oráculo dejará de sincronizar.", color = Color.White.copy(0.6f), fontSize = 14.sp)
+                Text("La sincronización de El Oráculo se detendrá.", color = Color.White.copy(0.6f), fontSize = 14.sp, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(32.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                        Text("CANCELAR", color = Color.White)
-                    }
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("CANCELAR", color = Color.White) }
+                    Button(onClick = onConfirm, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain), shape = RoundedCornerShape(16.dp)) {
                         Text("SALIR", fontWeight = FontWeight.Bold)
                     }
                 }
@@ -293,57 +304,16 @@ fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 @Composable
 fun GoldenBall(num: String) {
     val infiniteTransition = rememberInfiniteTransition(label = "gold")
-    val glowScale by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "glow"
-    )
-    Box(
-        modifier = Modifier.size(42.dp).scale(glowScale).clip(CircleShape)
-            .background(Color.Black.copy(0.4f)).border(1.dp, GoldLuxe.copy(0.5f), CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
+    val glowScale by infiniteTransition.animateFloat(1f, 1.12f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
+    Box(modifier = Modifier.size(42.dp).scale(glowScale).clip(CircleShape).background(Color.Black.copy(0.4f)).border(1.dp, GoldLuxe.copy(0.5f), CircleShape), contentAlignment = Alignment.Center) {
         Text(num, color = GoldLuxe, fontSize = 14.sp, fontWeight = FontWeight.Black)
     }
 }
 
 @Composable
 fun NumberBall(number: String, color: Color) {
-    Box(
-        modifier = Modifier.size(38.dp).clip(CircleShape).background(color).border(1.dp, Color.White.copy(0.3f), CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(color).border(1.dp, Color.White.copy(0.3f), CircleShape), contentAlignment = Alignment.Center) {
         Text(number, color = Color.White, fontWeight = FontWeight.Black, fontSize = 16.sp)
-    }
-}
-
-@Composable
-fun CombinationRow(combination: Combination, onDelete: (Long) -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.03f)),
-        border = BorderStroke(1.dp, Color.White.copy(0.08f))
-    ) {
-        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(combination.type, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 2.sp)
-                Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    combination.numbers.forEach { num ->
-                        Text(num.toString(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-            Box(
-                modifier = Modifier.size(32.dp).clip(CircleShape).background(EmeraldMain.copy(0.1f)).border(1.dp, EmeraldMain.copy(0.3f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(combination.reintegro.toString(), color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 14.sp)
-            }
-            IconButton(onClick = { onDelete(combination.id) }) {
-                Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.2f))
-            }
-        }
     }
 }
 
@@ -352,33 +322,20 @@ fun CombinationRow(combination: Combination, onDelete: (Long) -> Unit) {
 fun ManualEntryDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Unit) {
     var selectedNums by remember { mutableStateOf(setOf<Int>()) }
     var selectedR by remember { mutableStateOf(0) }
-
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
-            border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("ELEGIR JUGADA", color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 20.sp)
+        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface), border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))) {
+            Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("NUEVA COMBINACIÓN", color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(24.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     (1..49).forEach { n ->
                         val isSel = selectedNums.contains(n)
                         Surface(
-                            onClick = { if(isSel) selectedNums -= n else if(selectedNums.size < 6) selectedNums += n },
-                            modifier = Modifier.padding(4.dp).size(36.dp),
-                            shape = CircleShape,
-                            color = if(isSel) EmeraldMain else Color.Black.copy(0.3f),
-                            border = BorderStroke(1.dp, if(isSel) Color.White else EmeraldMain.copy(0.2f))
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(n.toString(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                            onClick = { if (isSel) selectedNums -= n else if (selectedNums.size < 6) selectedNums += n },
+                            modifier = Modifier.padding(4.dp).size(36.dp), shape = CircleShape,
+                            color = if (isSel) EmeraldMain else Color.Black.copy(0.3f),
+                            border = BorderStroke(1.dp, if (isSel) Color.White else EmeraldMain.copy(0.2f))
+                        ) { Box(contentAlignment = Alignment.Center) { Text(n.toString(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) } }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -387,26 +344,14 @@ fun ManualEntryDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Unit) {
                     (0..9).forEach { r ->
                         val isSel = selectedR == r
                         Surface(
-                            onClick = { selectedR = r },
-                            modifier = Modifier.size(30.dp),
-                            shape = CircleShape,
-                            color = if(isSel) Color.Red else Color.Black.copy(0.3f),
-                            border = BorderStroke(1.dp, if(isSel) Color.White else Color.Red.copy(0.2f))
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(r.toString(), color = Color.White, fontSize = 10.sp)
-                            }
-                        }
+                            onClick = { selectedR = r }, modifier = Modifier.size(30.dp), shape = CircleShape,
+                            color = if (isSel) Color.Red else Color.Black.copy(0.3f),
+                            border = BorderStroke(1.dp, if (isSel) Color.White else Color.Red.copy(0.2f))
+                        ) { Box(contentAlignment = Alignment.Center) { Text(r.toString(), color = Color.White, fontSize = 10.sp) } }
                     }
                 }
-                Button(
-                    onClick = { onSave(selectedNums.toList(), selectedR); onDismiss() },
-                    enabled = selectedNums.size == 6,
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain)
-                ) {
-                    Text("GUARDAR MAESTRA", fontWeight = FontWeight.Black)
+                Button(onClick = { onSave(selectedNums.toList(), selectedR); onDismiss() }, enabled = selectedNums.size == 6, modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(20.dp), colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain)) {
+                    Text("GUARDAR COMBINACIÓN", fontWeight = FontWeight.Black)
                 }
             }
         }
