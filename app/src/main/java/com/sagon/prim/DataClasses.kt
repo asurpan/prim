@@ -1,9 +1,5 @@
 package com.sagon.prim
 
-/**
- * ARQUITECTURA DE DATOS EMERALD LUXE
- * Centralización de estados para una UI reactiva y persistencia.
- */
 data class LotteryResult(
     val date: String,
     val numbers: List<Int>,

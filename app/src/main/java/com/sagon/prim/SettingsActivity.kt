@@ -7,10 +7,6 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import java.util.*
-import kotlin.random.Random
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -35,11 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.util.*
+import kotlin.random.Random
 
-/**
- * PALETA DE COLORES LUXE V17
- * Encapsulada para evitar conflictos de declaración global
- */
 private object SettingsPalette {
     val EmeraldMain = Color(0xFF10B981)
     val EmeraldSurface = Color(0xFF064E3B)
@@ -48,38 +44,22 @@ private object SettingsPalette {
 }
 
 class SettingsActivity : ComponentActivity() {
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(this, "Notificaciones limitadas por el sistema", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(
-                colorScheme = darkColorScheme(
-                    primary = SettingsPalette.EmeraldMain,
-                    surface = SettingsPalette.EmeraldSurface,
-                    onSurface = Color.White
-                )
+                colorScheme = darkColorScheme(primary = SettingsPalette.EmeraldMain, surface = SettingsPalette.EmeraldSurface, onSurface = Color.White)
             ) {
-                SettingsScreen(
-                    onBack = { finish() },
-                    onRequestPermission = { checkAndRequestNotificationPermission() }
-                )
+                SettingsScreen(onBack = { finish() }, onRequestPermission = { checkAndRequestNotificationPermission() })
             }
         }
     }
 
     private fun checkAndRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
@@ -91,13 +71,10 @@ class SettingsActivity : ComponentActivity() {
 fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
     val context = LocalContext.current
     val sharedPrefs = remember { context.getSharedPreferences("prim_luxe_prefs", Context.MODE_PRIVATE) }
+    val gson = Gson()
 
-    var numCombinations by remember {
-        mutableStateOf(sharedPrefs.getInt("num_extra_gen", 0).toFloat())
-    }
-    var notificationsEnabled by remember {
-        mutableStateOf(sharedPrefs.getBoolean("notifications_enabled", true))
-    }
+    var numCombinations by remember { mutableStateOf(sharedPrefs.getInt("num_extra_gen", 0).toFloat()) }
+    var notificationsEnabled by remember { mutableStateOf(sharedPrefs.getBoolean("notifications_enabled", true)) }
     var notifyMonday by remember { mutableStateOf(sharedPrefs.getBoolean("notify_monday", true)) }
     var notifyThursday by remember { mutableStateOf(sharedPrefs.getBoolean("notify_thursday", true)) }
     var notifySaturday by remember { mutableStateOf(sharedPrefs.getBoolean("notify_saturday", true)) }
@@ -113,33 +90,22 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Rounded.ArrowBackIosNew, null, tint = SettingsPalette.EmeraldMain)
-                        }
+                        IconButton(onClick = onBack) { Icon(Icons.Rounded.ArrowBackIosNew, null, tint = SettingsPalette.EmeraldMain) }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
                 )
             },
             containerColor = Color.Transparent
         ) { padding ->
-            Column(
-                modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
+            Column(modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 SettingsSection(title = "INTELIGENCIA DE CÁLCULO", icon = Icons.Rounded.AutoAwesome) {
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Combinaciones adicionales", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Jugadas extra inmediatas", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(numCombinations.toInt().toString(), color = SettingsPalette.GoldLuxe, fontSize = 18.sp, fontWeight = FontWeight.Black)
                         }
-                        Slider(
-                            value = numCombinations,
-                            onValueChange = { numCombinations = it },
-                            valueRange = 0f..10f,
-                            steps = 9,
-                            colors = SliderDefaults.colors(thumbColor = SettingsPalette.EmeraldMain, activeTrackColor = SettingsPalette.EmeraldMain)
-                        )
-                        Text("Define cuántas opciones extra generará el sistema en cada predicción. Se guardarán todas en el historial.", color = Color.White.copy(0.5f), fontSize = 11.sp, lineHeight = 16.sp)
+                        Slider(value = numCombinations, onValueChange = { numCombinations = it }, valueRange = 0f..10f, steps = 9, colors = SliderDefaults.colors(thumbColor = SettingsPalette.EmeraldMain, activeTrackColor = SettingsPalette.EmeraldMain))
+                        Text("Al guardar, se generarán estas jugadas y aparecerán en la pantalla principal al instante.", color = Color.White.copy(0.5f), fontSize = 11.sp, lineHeight = 16.sp)
                     }
                 }
 
@@ -147,14 +113,7 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                             Text("Alertas de Sorteo", color = Color.White, fontWeight = FontWeight.Bold)
-                            Switch(
-                                checked = notificationsEnabled,
-                                onCheckedChange = {
-                                    notificationsEnabled = it
-                                    if (it) onRequestPermission()
-                                },
-                                colors = SwitchDefaults.colors(checkedThumbColor = SettingsPalette.EmeraldMain, checkedTrackColor = SettingsPalette.EmeraldMain.copy(0.4f))
-                            )
+                            Switch(checked = notificationsEnabled, onCheckedChange = { notificationsEnabled = it; if (it) onRequestPermission() })
                         }
                         if (notificationsEnabled) {
                             HorizontalDivider(color = Color.White.copy(0.05f))
@@ -169,13 +128,9 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
 
                 Button(
                     onClick = {
-                        val gson = Gson()
-                        val currentNumExtra = sharedPrefs.getInt("num_extra_gen", 0)
-                        val newNumExtra = numCombinations.toInt()
-
-                        // 1. Guardar preferencias básicas
+                        val newCount = numCombinations.toInt()
                         sharedPrefs.edit().apply {
-                            putInt("num_extra_gen", newNumExtra)
+                            putInt("num_extra_gen", newCount)
                             putBoolean("notifications_enabled", notificationsEnabled)
                             putBoolean("notify_monday", notifyMonday)
                             putBoolean("notify_thursday", notifyThursday)
@@ -183,58 +138,29 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
                             apply()
                         }
 
-                        // 2. Generar las combinaciones adicionales inmediatamente si el usuario lo solicita
-                        // Cargamos estadísticas para la generación
-                        val statsJson = sharedPrefs.getString("historical_stats", null)
-                        val poolHistorico: List<Int> = try {
-                            gson.fromJson(statsJson, object : TypeToken<List<Int>>() {}.type)
-                                ?: listOf(38, 47, 39, 45, 3, 40)
-                        } catch (e: Exception) {
-                            listOf(38, 47, 39, 45, 3, 40)
-                        }
+                        if (newCount > 0) {
+                            val statsJson = sharedPrefs.getString("historical_stats", null)
+                            val pool: List<Int> = try { gson.fromJson(statsJson, object : TypeToken<List<Int>>() {}.type) ?: listOf(38, 47, 39, 45, 3, 40) } catch (e: Exception) { listOf(38, 47, 39, 45, 3, 40) }
 
-                        val poolFinal = if (poolHistorico.size >= 12) poolHistorico 
-                                       else poolHistorico + listOf(38, 47, 39, 45, 3, 40)
-
-                        // Generamos solo si el número es mayor a 0
-                        if (newNumExtra > 0) {
                             val existingJson = sharedPrefs.getString("saved_combis", null)
-                            val currentList: MutableList<Combination> = try {
-                                gson.fromJson(existingJson, object : TypeToken<MutableList<Combination>>() {}.type) 
-                                    ?: mutableListOf()
-                            } catch (e: Exception) {
-                                mutableListOf()
-                            }
+                            val list: MutableList<Combination> = try { gson.fromJson(existingJson, object : TypeToken<MutableList<Combination>>() {}.type) ?: mutableListOf() } catch (e: Exception) { mutableListOf() }
 
-                            val nuevas = mutableListOf<Combination>()
-                            repeat(newNumExtra) { i ->
-                                val nums = (poolFinal.shuffled().take(4) + 
-                                           generateSequence { Random.nextInt(1, 50) }
-                                           .filter { it !in poolFinal }.take(2).toList()).sorted()
-                                
-                                nuevas.add(Combination(
-                                    id = System.nanoTime() + i,
-                                    name = "EXTRA LUXE (Ajustes)",
-                                    numbers = nums,
-                                    reintegro = Random.nextInt(0, 10),
-                                    type = "COMBINACIÓN"
-                                ))
+                            repeat(newCount) { i ->
+                                val nums = (pool.shuffled().take(4) + generateSequence { Random.nextInt(1, 50) }.filter { it !in pool }.take(2).toList()).sorted()
+                                list.add(0, Combination(System.nanoTime() + i, "EXTRA LUXE (Ajustes)", nums, Random.nextInt(0, 10), "COMBINACIÓN"))
                             }
-
-                            val updatedList = (nuevas + currentList).take(100)
-                            sharedPrefs.edit().putString("saved_combis", gson.toJson(updatedList)).apply()
+                            sharedPrefs.edit().putString("saved_combis", gson.toJson(list.take(100))).apply()
                         }
-
-                        Toast.makeText(context, "Ajustes Sincronizados y Combinaciones Generadas", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Sincronización Luxe Completa", Toast.LENGTH_SHORT).show()
                         onBack()
                     },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SettingsPalette.EmeraldMain)
                 ) {
-                    Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Save, null)
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("GUARDAR Y APLICAR", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text("GUARDAR Y APLICAR", fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -243,12 +169,7 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
 
 @Composable
 fun SettingsSection(title: String, icon: ImageVector, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.04f)),
-        border = BorderStroke(1.dp, Color.White.copy(0.08f))
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.04f)), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = SettingsPalette.EmeraldMain, modifier = Modifier.size(18.dp))

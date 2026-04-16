@@ -35,7 +35,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var estadisticasReales: List<Int> = loadStatsFromPrefs()
 
-    // ESCUCHADOR DE CAMBIOS EN DISCO
+    // ESCUCHADOR REACTIVO: Detecta cambios realizados desde Ajustes u otros hilos
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == "saved_combis") {
             _savedCombinations.value = loadSavedData()
@@ -113,7 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val numExtra = prefs.getInt("num_extra_gen", 0)
             val totalGeneraciones = 1 + numExtra
             val poolHistorico = if (estadisticasReales.size >= 12) estadisticasReales else estadisticasReales + listOf(38, 47, 39, 45, 3, 40)
-
+            
             val nuevas = mutableListOf<Combination>()
             repeat(totalGeneraciones) { i ->
                 val nums = (poolHistorico.shuffled().take(4) + generateSequence { Random.nextInt(1, 50) }.filter { it !in poolHistorico }.take(2).toList()).sorted()
@@ -129,11 +129,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun guardarJugadaManual(numeros: List<Int>, reintegro: Int) {
+    fun guardarJugadaManual(nombre: String, numeros: List<Int>, reintegro: Int) {
         viewModelScope.launch(Dispatchers.Default) {
             val newCombination = Combination(
                 id = System.nanoTime(),
-                name = "JUGADA PERSONAL",
+                name = nombre.ifBlank { "JUGADA PERSONAL" }.uppercase(),
                 numbers = numeros.sorted(),
                 reintegro = reintegro,
                 type = "MANUAL"
