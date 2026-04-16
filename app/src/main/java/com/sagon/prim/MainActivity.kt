@@ -59,10 +59,12 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
+// --- CONFIGURACIÓN DE COLOR LUXE PLATINUM ---
 private val EmeraldMain = Color(0xFF10B981)
 private val EmeraldSurface = Color(0xFF064E3B)
 private val GoldLuxe = Color(0xFFFDE047)
 private val DeepGreenGradient = listOf(Color(0xFF064E3B), Color(0xFF022C22))
+private val PinkLuxe = Color(0xFFF472B6)
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -71,7 +73,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(
-                colorScheme = darkColorScheme(primary = EmeraldMain, surface = EmeraldSurface, onSurface = Color.White)
+                colorScheme = darkColorScheme(
+                    primary = EmeraldMain, 
+                    surface = EmeraldSurface, 
+                    onSurface = Color.White
+                )
             ) {
                 MainScreen(viewModel)
             }
@@ -111,8 +117,16 @@ fun MainScreen(viewModel: MainViewModel) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("PRIMITIVA PRIM", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp), color = EmeraldMain)
-                            Text("SINCRO LUXE ACTIVA", style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 4.sp), color = Color.White.copy(0.4f))
+                            Text("PRIMITIVA PRIM", 
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Black, 
+                                    letterSpacing = (-1.5).sp
+                                ), color = EmeraldMain)
+                            Text("SINCRO LUXE PLATINUM V17", 
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 4.sp,
+                                    fontWeight = FontWeight.Bold
+                                ), color = Color.White.copy(0.4f))
                         }
                     },
                     actions = {
@@ -132,8 +146,8 @@ fun MainScreen(viewModel: MainViewModel) {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, Color(0xFFF472B6), Modifier.weight(1f)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, PinkLuxe, Modifier.weight(1f)) {
                             showTicketReader = true
                         }
                         ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "4 ÉXITOS + 2 AZAR", true, { showInfoDialog = true }) {
@@ -197,11 +211,12 @@ fun MainScreen(viewModel: MainViewModel) {
                 }
 
                 item {
-                    Text("JUGADAS GUARDADAS", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text("JUGADAS GUARDADAS Y ESCRUTINIO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 8.dp))
                 }
 
                 items(savedCombinations, key = { it.id }) { combination ->
-                    CombinationRow(combination) { id ->
+                    val lastRes = (uiState as? MainUiState.Success)?.data
+                    CombinationRow(combination, lastRes) { id ->
                         selectedDeleteId = id
                         showDeleteDialog = true
                     }
@@ -252,6 +267,126 @@ fun MainScreen(viewModel: MainViewModel) {
 }
 
 @Composable
+fun CombinationRow(combination: Combination, lastResult: LotteryResult?, onDeleteClick: (Long) -> Unit) {
+    val context = LocalContext.current
+    
+    val hits = remember(combination, lastResult) {
+        lastResult?.let { res ->
+            combination.numbers.count { it in res.numbers }
+        } ?: 0
+    }
+    val hitReintegro = remember(combination, lastResult) {
+        lastResult?.reintegro == combination.reintegro
+    }
+    
+    val isWinner = hits >= 3
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(if (isWinner) 12.dp else 0.dp, spotColor = EmeraldMain),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isWinner) EmeraldMain.copy(0.08f) else Color.White.copy(0.03f)
+        ),
+        border = BorderStroke(
+            1.dp, 
+            if (isWinner) EmeraldMain.copy(0.6f) else Color.White.copy(0.1f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp), 
+            verticalAlignment = Alignment.CenterVertically, 
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(combination.name, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 1.sp)
+                    
+                    if (lastResult != null) {
+                        Surface(
+                            color = if (isWinner) EmeraldMain else Color.White.copy(0.1f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = if (isWinner) "★ PREMIO ★" else "$hits ACIERTOS",
+                                color = Color.White,
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    combination.numbers.forEach { num ->
+                        val isHit = lastResult?.numbers?.contains(num) == true
+                        Text(
+                            num.toString().padStart(2, '0'), 
+                            color = if (isHit) EmeraldMain else Color.White, 
+                            fontSize = 17.sp, 
+                            fontWeight = if (isHit) FontWeight.Black else FontWeight.Bold,
+                            modifier = if (isHit) Modifier.scale(1.1f) else Modifier
+                        )
+                    }
+                }
+                
+                if (isWinner) {
+                    Text(
+                        text = "¡FELICIDADES! HAS ACERTADO $hits NÚMEROS",
+                        color = EmeraldMain,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp),
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+
+            // Reintegro Column
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("R", color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(if (hitReintegro) Color.Red.copy(0.2f) else EmeraldMain.copy(0.05f))
+                        .border(1.dp, if (hitReintegro) Color.Red else EmeraldMain.copy(0.2f), CircleShape), 
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        combination.reintegro.toString(), 
+                        color = if (hitReintegro) Color.Red else EmeraldMain, 
+                        fontWeight = FontWeight.Black, 
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
+            // Actions
+            Column {
+                IconButton(onClick = {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        putExtra(Intent.EXTRA_TEXT, "¡Mi jugada Primitiva!: ${combination.numbers.joinToString("-")} | R: ${combination.reintegro}")
+                        type = "text/plain"
+                    }
+                    context.startActivity(Intent.createChooser(intent, null))
+                }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Rounded.Share, null, tint = EmeraldMain, modifier = Modifier.size(16.dp))
+                }
+                IconButton(onClick = { onDeleteClick(combination.id) }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.2f), modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumbersDetected: (List<Int>) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -279,10 +414,10 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
         Card(
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
-            border = BorderStroke(1.dp, Color(0xFFF472B6).copy(0.3f))
+            border = BorderStroke(1.dp, PinkLuxe.copy(0.3f))
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Rounded.QrCodeScanner, null, tint = Color(0xFFF472B6), modifier = Modifier.size(40.dp))
+                Icon(Icons.Rounded.QrCodeScanner, null, tint = PinkLuxe, modifier = Modifier.size(40.dp))
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("LECTOR OPTIQUE V17", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text("Escanee el área de los números del boleto", 
@@ -296,7 +431,7 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
                         .height(280.dp)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.Black)
-                        .border(2.dp, Color(0xFFF472B6).copy(0.2f), RoundedCornerShape(24.dp)),
+                        .border(2.dp, PinkLuxe.copy(0.2f), RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (hasCameraPermission) {
@@ -367,10 +502,9 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
                         // Overlay de escaneo
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val strokeWidth = 2.dp.toPx()
-                            val color = Color(0xFFF472B6)
+                            val color = PinkLuxe
                             val pad = 40.dp.toPx()
                             
-                            // Esquema de enfoque
                             drawLine(color, androidx.compose.ui.geometry.Offset(pad, pad), androidx.compose.ui.geometry.Offset(pad + 50f, pad), strokeWidth * 2)
                             drawLine(color, androidx.compose.ui.geometry.Offset(pad, pad), androidx.compose.ui.geometry.Offset(pad, pad + 50f), strokeWidth * 2)
                             
@@ -394,7 +528,7 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
                                 .height(2.dp)
                                 .align(Alignment.TopCenter)
                                 .offset(y = 280.dp * scanLineY)
-                                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFFF472B6), Color.Transparent)))
+                                .background(Brush.horizontalGradient(listOf(Color.Transparent, PinkLuxe, Color.Transparent)))
                         )
                         
                         if (isProcessing) {
@@ -404,7 +538,7 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
                         }
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = Color(0xFFF472B6))
+                            CircularProgressIndicator(color = PinkLuxe)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Esperando permisos...", color = Color.White.copy(0.5f), fontSize = 10.sp)
                         }
@@ -426,45 +560,6 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
                 
                 TextButton(onClick = onDismiss) {
                     Text("CANCELAR", color = Color.White.copy(0.5f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CombinationRow(combination: Combination, onDeleteClick: (Long) -> Unit) {
-    val context = LocalContext.current
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.03f)),
-        border = BorderStroke(1.dp, Color.White.copy(0.08f))
-    ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(combination.name, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 8.sp, letterSpacing = 1.sp)
-                Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    combination.numbers.forEach { num ->
-                        Text(num.toString(), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-            Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(EmeraldMain.copy(0.1f)).border(1.dp, EmeraldMain.copy(0.3f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(combination.reintegro.toString(), color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 12.sp)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        putExtra(Intent.EXTRA_TEXT, "¡Mi jugada Primitiva!: ${combination.numbers.joinToString("-")} | R: ${combination.reintegro}")
-                        type = "text/plain"
-                    }
-                    context.startActivity(Intent.createChooser(intent, null))
-                }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Rounded.Share, null, tint = EmeraldMain, modifier = Modifier.size(18.dp))
-                }
-                IconButton(onClick = { onDeleteClick(combination.id) }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(18.dp))
                 }
             }
         }
