@@ -18,7 +18,8 @@ data class Combination(
     val name: String,
     val numbers: List<Int>,
     val reintegro: Int,
-    val type: String
+    val type: String,
+    val date: String = ""
 )
 
 sealed class MainUiState {

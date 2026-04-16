@@ -179,11 +179,18 @@ fun MainScreen(viewModel: MainViewModel) {
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(12.dp), maxItemsInEachRow = 6) {
                                 stats.take(12).forEach { num ->
                                     GoldenBall(num.toString()) {
-                                        initialManualNumbers = listOf(num)
-                                        showManualSelector = true
+                                        if (initialManualNumbers.size < 6 && num !in initialManualNumbers) {
+                                            initialManualNumbers = (initialManualNumbers + num).sorted()
+                                            showManualSelector = true
+                                        } else if (num in initialManualNumbers) {
+                                            showManualSelector = true
+                                        } else {
+                                            initialManualNumbers = listOf(num)
+                                            showManualSelector = true
+                                        }
                                     }
                                 }
                             }
@@ -281,7 +288,12 @@ fun CombinationRow(combination: Combination, lastResult: LotteryResult?, onDelet
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(combination.name, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(combination.name, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                    if (combination.date.isNotEmpty()) {
+                        Text(" • ${combination.date}", color = Color.White.copy(0.4f), fontSize = 9.sp, modifier = Modifier.padding(start = 4.dp))
+                    }
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     combination.numbers.forEach { num ->
@@ -406,21 +418,150 @@ fun ManualEntryDialog(initialNumbers: List<Int>, frequentNumbers: List<Int>, onD
     var reintegro by remember { mutableIntStateOf(0) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface)) {
-            Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("NUEVA JUGADA", color = EmeraldMain, fontWeight = FontWeight.Black)
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(value = name, onValueChange = { name = it }, placeholder = { Text("Nombre...") })
-                Spacer(modifier = Modifier.height(16.dp))
-                FlowRow {
-                    (1..49).forEach { n ->
-                        FilterChip(selected = selected.contains(n), onClick = { if (selected.contains(n)) selected -= n else if (selected.size < 6) selected += n }, label = { Text(n.toString()) })
+        Card(
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
+            border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxHeight(0.9f)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("CONFIGURAR JUGADA", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre de la jugada", color = Color.White.copy(0.5f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = EmeraldMain,
+                        unfocusedBorderColor = Color.White.copy(0.2f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Panel de números seleccionados
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    (0..5).forEach { index ->
+                        val num = selected.toList().sorted().getOrNull(index)
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(if (num != null) EmeraldMain else Color.White.copy(0.05f))
+                                .border(1.dp, if (num != null) GoldLuxe else Color.White.copy(0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = num?.toString() ?: "",
+                                color = if (num != null) Color.Black else Color.White,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Reintegro: $reintegro", color = Color.White)
-                Slider(value = reintegro.toFloat(), onValueChange = { reintegro = it.toInt() }, valueRange = 0f..9f, steps = 8)
-                Button(onClick = { onSave(name, selected.toList(), reintegro); onDismiss() }, enabled = selected.size == 6, modifier = Modifier.fillMaxWidth()) { Text("GUARDAR") }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (frequentNumbers.isNotEmpty()) {
+                    Text("TENDENCIAS (Toca para añadir)", color = EmeraldMain, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        frequentNumbers.take(12).forEach { n ->
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (selected.contains(n)) EmeraldMain else GoldLuxe.copy(0.1f))
+                                    .border(1.dp, if (selected.contains(n)) GoldLuxe else GoldLuxe.copy(0.3f), CircleShape)
+                                    .clickable {
+                                        if (selected.contains(n)) selected -= n
+                                        else if (selected.size < 6) selected += n
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(n.toString(), color = if (selected.contains(n)) Color.Black else GoldLuxe, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                Text("SELECCIÓN MANUAL", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    (1..49).forEach { n ->
+                        val isSelected = selected.contains(n)
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) EmeraldMain else Color.White.copy(0.05f))
+                                .border(1.dp, if (isSelected) GoldLuxe else Color.White.copy(0.1f), CircleShape)
+                                .clickable {
+                                    if (isSelected) selected -= n
+                                    else if (selected.size < 6) selected += n
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                n.toString(),
+                                color = if (isSelected) Color.Black else Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text("REINTEGRO: $reintegro", color = GoldLuxe, fontWeight = FontWeight.Black)
+                Slider(
+                    value = reintegro.toFloat(),
+                    onValueChange = { reintegro = it.toInt() },
+                    valueRange = 0f..9f,
+                    steps = 8,
+                    colors = SliderDefaults.colors(
+                        thumbColor = EmeraldMain,
+                        activeTrackColor = EmeraldMain,
+                        inactiveTrackColor = Color.White.copy(0.1f)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = { onSave(name, selected.toList().sorted(), reintegro); onDismiss() },
+                    enabled = selected.size == 6,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain, disabledContainerColor = Color.White.copy(0.1f))
+                ) {
+                    Text("GUARDAR COMBINACIÓN", fontWeight = FontWeight.Black)
+                }
+
+                TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 8.dp)) {
+                    Text("CANCELAR", color = Color.White.copy(0.5f))
+                }
             }
         }
     }

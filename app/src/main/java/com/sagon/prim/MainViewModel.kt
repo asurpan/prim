@@ -44,10 +44,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun limpiarCacheObsoleta() {
-        val cached = prefs.getString("last_lottery_result", null)
-        if (cached != null && !cached.contains("202")) { 
-            prefs.edit().remove("last_lottery_result").apply()
-        }
+        // Desactivado temporalmente para evitar borrar resultados válidos de 2026
     }
 
     private fun loadLastResult() {
@@ -66,7 +63,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun syncWithOfficialWeb() {
         viewModelScope.launch {
             try {
-                _uiState.value = MainUiState.Loading
+                if (_uiState.value !is MainUiState.Success) {
+                    _uiState.value = MainUiState.Loading
+                }
                 val result = withContext(Dispatchers.IO) {
                     // INTENTO 1: WEB OFICIAL (Resultados generales)
                     fetchOfficial() 
@@ -148,7 +147,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.Default) {
             val pool = if (estadisticasReales.size >= 12) estadisticasReales else listOf(38, 47, 39, 45, 3, 40)
             val nums = (pool.shuffled().take(4) + (1..49).filter { it !in pool }.shuffled().take(2)).sorted()
-            val c = Combination(System.nanoTime(), "PREDICCIÓN MAESTRA", nums, Random.nextInt(0, 10), "COMBINACIÓN")
+            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            val currentDate = sdf.format(Date())
+            val c = Combination(System.nanoTime(), "PREDICCIÓN MAESTRA", nums, Random.nextInt(0, 10), "COMBINACIÓN", currentDate)
             _savedCombinations.update { (listOf(c) + it).take(100) }
             persistToDisk(_savedCombinations.value)
             withContext(Dispatchers.Main) { _confettiTrigger.value += 1 }
@@ -157,7 +158,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun guardarJugadaManual(nombre: String, n: List<Int>, r: Int) {
         viewModelScope.launch(Dispatchers.Default) {
-            val c = Combination(System.nanoTime(), nombre.ifBlank { "MI JUGADA" }.uppercase(), n.sorted(), r, "MANUAL")
+            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            val currentDate = sdf.format(Date())
+            val c = Combination(System.nanoTime(), nombre.ifBlank { "MI JUGADA" }.uppercase(), n.sorted(), r, "MANUAL", currentDate)
             _savedCombinations.update { (listOf(c) + it).take(100) }
             persistToDisk(_savedCombinations.value)
         }

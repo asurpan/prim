@@ -145,9 +145,11 @@ fun SettingsScreen(onBack: () -> Unit, onRequestPermission: () -> Unit) {
                             val existingJson = sharedPrefs.getString("saved_combis", null)
                             val list: MutableList<Combination> = try { gson.fromJson(existingJson, object : TypeToken<MutableList<Combination>>() {}.type) ?: mutableListOf() } catch (e: Exception) { mutableListOf() }
 
+                            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                            val currentDate = sdf.format(Date())
                             repeat(newCount) { i ->
                                 val nums = (pool.shuffled().take(4) + generateSequence { Random.nextInt(1, 50) }.filter { it !in pool }.take(2).toList()).sorted()
-                                list.add(0, Combination(System.nanoTime() + i, "EXTRA (Ajustes)", nums, Random.nextInt(0, 10), "COMBINACIÓN"))
+                                list.add(0, Combination(System.nanoTime() + i, "EXTRA (Ajustes)", nums, Random.nextInt(0, 10), "COMBINACIÓN", currentDate))
                             }
                             sharedPrefs.edit().putString("saved_combis", gson.toJson(list.take(100))).apply()
                         }
