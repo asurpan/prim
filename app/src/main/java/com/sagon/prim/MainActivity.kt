@@ -81,7 +81,7 @@ fun MainScreen(viewModel: MainViewModel) {
     var showManualDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    // Configuración de Confetti Premium
+    // Configuración de Confetti Premium para celebraciones
     val party = remember {
         Party(
             speed = 5f, 
@@ -165,7 +165,7 @@ fun MainScreen(viewModel: MainViewModel) {
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // --- CUADRÍCULA DE ACCIONES - 4 BOTONES ---
+                // --- CUADRÍCULA DE ACCIONES (TRIPLE REDUNDANCIA UI) ---
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -183,6 +183,7 @@ fun MainScreen(viewModel: MainViewModel) {
                                 modifier = Modifier.weight(1f)
                             ) {
                                 scope.launch {
+                                    // Scroll automático al encabezado del historial
                                     listState.animateScrollToItem(index = 3)
                                 }
                             }
@@ -221,7 +222,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // --- PANEL DE RESULTADOS (GLASSMORPHISM) ---
+                // --- PANEL DE RESULTADOS (GLASSMORPHISM & LUXE) ---
                 item {
                     when (val state = uiState) {
                         is MainUiState.Loading -> {
@@ -361,7 +362,7 @@ fun MainScreen(viewModel: MainViewModel) {
             }
         }
 
-        // --- DIÁLOGOS ---
+        // --- DIÁLOGOS DE SELECCIÓN Y AJUSTES ---
         if (showManualDialog) {
             ManualSelectionDialog(
                 onDismiss = { showManualDialog = false }, 
@@ -523,7 +524,7 @@ fun ManualSelectionDialog(onDismiss: () -> Unit, onSave: (List<Int>, Int) -> Uni
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "NÚMEROS (6)", 
+                    text = "NÚMEROS (SELECCIONA 6)",
                     color = Color.White.copy(0.5f), 
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 )
