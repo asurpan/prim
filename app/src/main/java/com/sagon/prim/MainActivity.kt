@@ -1,7 +1,10 @@
 package com.sagon.prim
 
 import android.Manifest
-import android.app.Activity
+import android.app.Activityimport
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -28,8 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -55,7 +57,7 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
-// --- CONFIGURACIÓN DE COLOR LUXE PLATINUM ---
+// --- PALETA LUXE PLATINUM 2026 ---
 private val EmeraldMain = Color(0xFF10B981)
 private val EmeraldSurface = Color(0xFF064E3B)
 private val GoldLuxe = Color(0xFFFDE047)
@@ -113,14 +115,14 @@ fun MainScreen(viewModel: MainViewModel) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("PRIMITIVA",
+                            Text("PRIMITIVA PRIM",
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     fontWeight = FontWeight.Black,
                                     letterSpacing = (-1.5).sp
                                 ), color = EmeraldMain)
-                            Text("SINCRO OFICIAL 2026",
+                            Text("¡QUE LA SUERTE TE ACOMPAÑE!",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 4.sp,
+                                    letterSpacing = 2.sp,
                                     fontWeight = FontWeight.Bold
                                 ), color = Color.White.copy(0.4f))
                         }
@@ -138,68 +140,62 @@ fun MainScreen(viewModel: MainViewModel) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = PaddingValues(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // --- BOTONES DE ACCIÓN SUPERIORES ---
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, PinkLuxe, Modifier.weight(1f)) {
+                        ActionButton("LECTOR", Icons.Rounded.QrCodeScanner, PinkLuxe, Modifier.weight(1f), "ESCANEO IA") {
                             showTicketReader = true
                         }
-                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "ESTRATEGIA 2026", true, { showInfoDialog = true }) {
+                        ActionButton("PREDECIR", Icons.Rounded.AutoAwesome, GoldLuxe, Modifier.weight(1.3f), "TOP FREQ. + 2 ALEAT.", true) {
                             viewModel.generarPrediccionMaestra()
                         }
-                        ActionButton("NUEVA", Icons.Rounded.Add, EmeraldMain, Modifier.weight(1f)) {
-                            initialManualNumbers = emptyList()
-                            showManualSelector = true
+                        ActionButton("AJUSTES", Icons.Rounded.Settings, Color(0xFFA78BFA), Modifier.weight(1f)) {
+                            // Lógica de ajustes si existiera
                         }
                     }
                 }
 
+                // --- ÚLTIMO SORTEO ---
                 item {
-                    when (val state = uiState) {
-                        is MainUiState.Success -> ResultCard(state.data)
-                        is MainUiState.Error -> ErrorDisplay(state.message) { viewModel.syncWithOfficialWeb() }
-                        MainUiState.Loading -> LoadingDisplay()
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text("ÚLTIMO SORTEO: PRIM", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 2.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        when (val state = uiState) {
+                            is MainUiState.Success -> ResultCard(state.data)
+                            is MainUiState.Error -> ErrorDisplay(state.message) { viewModel.syncWithOfficialWeb() }
+                            MainUiState.Loading -> LoadingDisplay()
+                        }
                     }
                 }
 
+                // --- TENDENCIAS HISTÓRICAS (2 FILAS) ---
                 item {
                     if (uiState is MainUiState.Success) {
                         val stats = (uiState as MainUiState.Success).data.frequent
-                        Column {
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("TENDENCIAS 2026", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 1.sp)
-                                TextButton(onClick = {
-                                    initialManualNumbers = stats.take(6)
-                                    showManualSelector = true
-                                }) {
-                                    Text("JUGAR TOP 6", color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                                    Icon(Icons.Rounded.ChevronRight, null, tint = GoldLuxe, modifier = Modifier.size(14.dp))
-                                }
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Text("NÚMEROS CON MÁS APARICIONES (HISTÓRICO)", color = GoldLuxe.copy(0.7f), fontWeight = FontWeight.Black, fontSize = 10.sp, letterSpacing = 1.sp)
+
+                            // Fila 1 (Top 1-6)
+                            TrendRow(stats.take(6), context) {
+                                initialManualNumbers = stats.take(6)
+                                showManualSelector = true
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(12.dp), maxItemsInEachRow = 6) {
-                                stats.take(12).forEach { num ->
-                                    GoldenBall(num.toString()) {
-                                        if (initialManualNumbers.size < 6 && num !in initialManualNumbers) {
-                                            initialManualNumbers = (initialManualNumbers + num).sorted()
-                                            showManualSelector = true
-                                        } else if (num in initialManualNumbers) {
-                                            showManualSelector = true
-                                        } else {
-                                            initialManualNumbers = listOf(num)
-                                            showManualSelector = true
-                                        }
-                                    }
-                                }
+
+                            // Fila 2 (Top 7-12)
+                            TrendRow(stats.drop(6).take(6), context) {
+                                initialManualNumbers = stats.drop(6).take(6)
+                                showManualSelector = true
                             }
                         }
                     }
                 }
 
+                // --- HISTORIAL Y ESCRUTINIO ---
                 item {
-                    Text("JUGADAS GUARDADAS", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text("HISTORIAL Y ESCRUTINIO", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 2.sp)
                 }
 
                 items(savedCombinations, key = { it.id }) { combination ->
@@ -212,44 +208,29 @@ fun MainScreen(viewModel: MainViewModel) {
             }
         }
 
+        // --- DIÁLOGOS ---
         if (confettiTrigger > 0) KonfettiView(modifier = Modifier.fillMaxSize(), parties = listOf(party))
-
-        if (showInfoDialog) AlgorithmHelpDialog { showInfoDialog = false }
-
         if (showDeleteDialog && selectedDeleteId != null) {
             DeleteConfirmDialog(onDismiss = { showDeleteDialog = false }, onConfirm = {
                 selectedDeleteId?.let { viewModel.deleteEntry(it) }
                 showDeleteDialog = false
             })
         }
-
         if (showTicketReader) {
             TicketReaderDialog(
                 onDismiss = { showTicketReader = false },
-                onScanManual = {
-                    initialManualNumbers = emptyList()
-                    showManualSelector = true
-                    showTicketReader = false
-                },
-                onNumbersDetected = { numbers ->
-                    initialManualNumbers = numbers
-                    showManualSelector = true
-                    showTicketReader = false
-                    Toast.makeText(context, "Boleto detectado con éxito", Toast.LENGTH_SHORT).show()
-                }
+                onScanManual = { showManualSelector = true; showTicketReader = false },
+                onNumbersDetected = { numbers -> initialManualNumbers = numbers; showManualSelector = true; showTicketReader = false }
             )
         }
-
         if (showManualSelector) {
-            val frequentList = if (uiState is MainUiState.Success) (uiState as MainUiState.Success).data.frequent else emptyList()
             ManualEntryDialog(
                 initialNumbers = initialManualNumbers,
-                frequentNumbers = frequentList,
+                frequentNumbers = if (uiState is MainUiState.Success) (uiState as MainUiState.Success).data.frequent else emptyList(),
                 onDismiss = { showManualSelector = false },
                 onSave = { nombre, n, r -> viewModel.guardarJugadaManual(nombre, n, r) }
             )
         }
-
         if (showExitDialog) LuxeExitDialog({ showExitDialog = false }, { (context as? Activity)?.finish() })
     }
 }
@@ -257,18 +238,54 @@ fun MainScreen(viewModel: MainViewModel) {
 @Composable
 fun ResultCard(data: LotteryResult) {
     Card(
-        modifier = Modifier.fillMaxWidth().shadow(30.dp, spotColor = EmeraldMain),
-        shape = RoundedCornerShape(32.dp),
+        modifier = Modifier.fillMaxWidth().shadow(20.dp, spotColor = EmeraldMain),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.05f)),
         border = BorderStroke(1.dp, EmeraldMain.copy(0.2f))
     ) {
-        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(data.date, color = EmeraldMain, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                data.numbers.forEach { NumberBall(it.toString(), EmeraldMain) }
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(0.1f)))
-                NumberBall(data.reintegro.toString(), Color.Red)
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            data.numbers.forEach { NumberBall(it.toString(), EmeraldMain) }
+            Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.White.copy(0.1f)))
+            NumberBall(data.reintegro.toString(), Color.Red)
+        }
+    }
+}
+
+@Composable
+fun TrendRow(numbers: List<Int>, context: android.content.Context, onEditClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.04f)),
+        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                numbers.forEach { num ->
+                    GoldenBall(num.toString(), onClick = onEditClick)
+                }
+            }
+
+            IconButton(modifier = Modifier.size(30.dp), onClick = {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "🔥 Top números Primitiva: ${numbers.joinToString("-")}")
+                }
+                context.startActivity(Intent.createChooser(intent, "Compartir"))
+            }) {
+                Icon(Icons.Rounded.Share, null, tint = EmeraldMain.copy(0.7f), modifier = Modifier.size(16.dp))
+            }
+
+            IconButton(modifier = Modifier.size(30.dp), onClick = onEditClick) {
+                Icon(Icons.Rounded.ChevronRight, null, tint = GoldLuxe, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -276,37 +293,54 @@ fun ResultCard(data: LotteryResult) {
 
 @Composable
 fun CombinationRow(combination: Combination, lastResult: LotteryResult?, onDeleteClick: (Long) -> Unit) {
+    val context = LocalContext.current
     val hits = remember(combination, lastResult) { lastResult?.let { res -> combination.numbers.count { it in res.numbers } } ?: 0 }
     val hitReintegro = remember(combination, lastResult) { lastResult?.reintegro == combination.reintegro }
     val isWinner = hits >= 3
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isWinner) EmeraldMain.copy(0.1f) else Color.White.copy(0.03f)),
-        border = BorderStroke(1.dp, if (isWinner) EmeraldMain.copy(0.5f) else Color.White.copy(0.1f))
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isWinner) EmeraldMain.copy(0.08f) else Color.White.copy(0.02f)),
+        border = BorderStroke(1.dp, if (isWinner) EmeraldMain.copy(0.4f) else Color.White.copy(0.08f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(combination.name, color = GoldLuxe, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                    Text(combination.name.uppercase(), color = GoldLuxe, fontWeight = FontWeight.ExtraBold, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, false))
                     if (combination.date.isNotEmpty()) {
-                        Text(" • ${combination.date}", color = Color.White.copy(0.4f), fontSize = 9.sp, modifier = Modifier.padding(start = 4.dp))
+                        Text(" • ${combination.date.split(" ")[0]}", color = Color.White.copy(0.3f), fontSize = 8.sp, modifier = Modifier.padding(start = 4.dp))
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     combination.numbers.forEach { num ->
                         val isHit = lastResult?.numbers?.contains(num) == true
-                        Text(num.toString().padStart(2, '0'), color = if (isHit) EmeraldMain else Color.White, fontWeight = if (isHit) FontWeight.Black else FontWeight.Bold, fontSize = 16.sp)
+                        Text(num.toString().padStart(2, '0'), color = if (isHit) EmeraldMain else Color.White, fontWeight = if (isHit) FontWeight.Black else FontWeight.Bold, fontSize = 15.sp)
                     }
                 }
             }
-            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(if (hitReintegro) Color.Red.copy(0.2f) else Color.Transparent).border(1.dp, if (hitReintegro) Color.Red else EmeraldMain.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(combination.reintegro.toString(), color = if (hitReintegro) Color.Red else EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+
+            Box(modifier = Modifier.size(26.dp).clip(CircleShape).background(if (hitReintegro) Color.Red.copy(0.2f) else Color.Transparent).border(1.dp, if (hitReintegro) Color.Red else EmeraldMain.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
+                Text(combination.reintegro.toString(), color = if (hitReintegro) Color.Red else EmeraldMain, fontWeight = FontWeight.Bold, fontSize = 11.sp)
             }
-            IconButton(onClick = { onDeleteClick(combination.id) }) {
-                Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.1f))
+
+            IconButton(modifier = Modifier.size(30.dp), onClick = {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "🍀 Mi jugada: ${combination.numbers.joinToString("-")} [R:${combination.reintegro}]")
+                }
+                context.startActivity(Intent.createChooser(intent, "Compartir"))
+            }) {
+                Icon(Icons.Rounded.Share, null, tint = EmeraldMain.copy(0.8f), modifier = Modifier.size(16.dp))
+            }
+
+            IconButton(modifier = Modifier.size(30.dp), onClick = { onDeleteClick(combination.id) }) {
+                Icon(Icons.Rounded.DeleteOutline, null, tint = Color.White.copy(0.15f), modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -317,47 +351,39 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val recognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var hasCameraPermission by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
-
-    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(), onResult = { granted -> hasCameraPermission = granted })
-    LaunchedEffect(Unit) { if (!hasCameraPermission) launcher.launch(Manifest.permission.CAMERA) }
+    var hasPermission by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface)) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Rounded.QrCodeScanner, null, tint = PinkLuxe, modifier = Modifier.size(40.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("LECTOR DE BOLETOS", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                Spacer(modifier = Modifier.height(20.dp))
-                Box(modifier = Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(24.dp)).background(Color.Black), contentAlignment = Alignment.Center) {
-                    if (hasCameraPermission) {
+        Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface)) {
+            Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("LECTOR IA 2026", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(250.dp).clip(RoundedCornerShape(20.dp)).background(Color.Black)) {
+                    if (hasPermission) {
                         AndroidView(factory = { ctx ->
-                            val previewView = PreviewView(ctx)
-                            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                            cameraProviderFuture.addListener({
-                                val cameraProvider = cameraProviderFuture.get()
-                                val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
-                                val imageAnalysis = ImageAnalysis.Builder().setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
-                                imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
-                                    if (isProcessing) { imageProxy.close(); return@setAnalyzer }
-                                    val mediaImage = imageProxy.image
-                                    if (mediaImage != null) {
-                                        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                                        recognizer.process(image).addOnSuccessListener { visionText ->
-                                            val foundNumbers = visionText.text.split(Regex("[^0-9]+")).mapNotNull { it.toIntOrNull() }.filter { it in 1..49 }.distinct()
-                                            if (foundNumbers.size >= 6) { isProcessing = true; onNumbersDetected(foundNumbers.take(6).sorted()) }
-                                        }.addOnCompleteListener { imageProxy.close() }
-                                    } else imageProxy.close()
-                                }
-                                try { cameraProvider.unbindAll(); cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalysis) } catch (e: Exception) { Log.e("CameraX", "Binding failed", e) }
-                            }, ContextCompat.getMainExecutor(ctx))
-                            previewView
+                            PreviewView(ctx).apply {
+                                val providerFuture = ProcessCameraProvider.getInstance(ctx)
+                                providerFuture.addListener({
+                                    val provider = providerFuture.get()
+                                    val preview = Preview.Builder().build().also { it.setSurfaceProvider(surfaceProvider) }
+                                    val analysis = ImageAnalysis.Builder().build().also {
+                                        it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { proxy ->
+                                            proxy.image?.let { img ->
+                                                recognizer.process(InputImage.fromMediaImage(img, proxy.imageInfo.rotationDegrees))
+                                                    .addOnSuccessListener { visionText ->
+                                                        val nums = visionText.text.split(Regex("[^0-9]+")).mapNotNull { s -> s.toIntOrNull() }.filter { n -> n in 1..49 }.distinct()
+                                                        if (nums.size >= 6) onNumbersDetected(nums.take(6).sorted())
+                                                    }.addOnCompleteListener { proxy.close() }
+                                            } ?: proxy.close()
+                                        }
+                                    }
+                                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+                                }, ContextCompat.getMainExecutor(ctx))
+                            }
                         }, modifier = Modifier.fillMaxSize())
-                    } else Text("Permiso de cámara necesario", color = Color.White)
+                    }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
-                TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.5f)) }
+                TextButton(onClick = onDismiss) { Text("CERRAR", color = Color.White.copy(0.4f)) }
             }
         }
     }
@@ -365,49 +391,48 @@ fun TicketReaderDialog(onDismiss: () -> Unit, onScanManual: () -> Unit, onNumber
 
 @Composable
 fun NumberBall(text: String, color: Color) {
-    Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(color).border(1.dp, Color.White.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
-        Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 16.sp)
+    Box(modifier = Modifier.size(34.dp).clip(CircleShape).background(color).border(1.dp, Color.White.copy(0.15f), CircleShape), contentAlignment = Alignment.Center) {
+        Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
     }
 }
 
 @Composable
 fun GoldenBall(num: String, onClick: () -> Unit) {
-    Box(modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.Black.copy(0.4f)).border(1.dp, GoldLuxe.copy(0.5f), CircleShape).clickable { onClick() }, contentAlignment = Alignment.Center) {
-        Text(num, color = GoldLuxe, fontSize = 14.sp, fontWeight = FontWeight.Black)
+    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color.Black.copy(0.3f)).border(1.dp, GoldLuxe.copy(0.4f), CircleShape).clickable { onClick() }, contentAlignment = Alignment.Center) {
+        Text(num, color = GoldLuxe, fontSize = 12.sp, fontWeight = FontWeight.Black)
     }
 }
 
 @Composable
-fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, detail: String? = null, showInfo: Boolean = false, onInfoClick: (() -> Unit)? = null, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.height(90.dp), shape = RoundedCornerShape(28.dp), color = Color.White.copy(0.06f), border = BorderStroke(1.dp, color.copy(0.3f))) {
+fun ActionButton(text: String, icon: ImageVector, color: Color, modifier: Modifier, detail: String? = null, showInfo: Boolean = false, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier.height(85.dp), shape = RoundedCornerShape(24.dp), color = Color.White.copy(0.06f), border = BorderStroke(1.dp, color.copy(0.2f))) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
+            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp)
-            if (detail != null) Text(detail, color = color.copy(0.6f), fontSize = 8.sp)
+            Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+            if (detail != null) Text(detail, color = color.copy(0.5f), fontSize = 7.sp)
         }
     }
 }
 
 @Composable
 fun LoadingDisplay() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        CircularProgressIndicator(color = EmeraldMain)
-        Text("Sincronizando 2026...", color = Color.White.copy(0.4f), fontSize = 11.sp, modifier = Modifier.padding(top = 12.dp))
+    Box(modifier = Modifier.fillMaxWidth().height(60.dp), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = EmeraldMain, strokeWidth = 2.dp)
     }
 }
 
 @Composable
 fun ErrorDisplay(msg: String, onRetry: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Text(msg, color = Color.White.copy(0.6f), textAlign = TextAlign.Center, fontSize = 12.sp)
-        TextButton(onClick = onRetry) { Text("REINTENTAR", color = EmeraldMain) }
+        Text(msg, color = Color.White.copy(0.5f), textAlign = TextAlign.Center, fontSize = 11.sp)
+        TextButton(onClick = onRetry) { Text("REINTENTAR", color = EmeraldMain, fontWeight = FontWeight.Bold) }
     }
 }
 
 @Composable
 fun DeleteConfirmDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("ELIMINAR") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("CANCELAR") } }, title = { Text("¿Eliminar jugada?") })
+    AlertDialog(onDismissRequest = onDismiss, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("ELIMINAR") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("CANCELAR") } }, title = { Text("¿Eliminar jugada?") }, containerColor = EmeraldSurface, titleContentColor = Color.White, textContentColor = Color.White.copy(0.7f))
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -418,149 +443,40 @@ fun ManualEntryDialog(initialNumbers: List<Int>, frequentNumbers: List<Int>, onD
     var reintegro by remember { mutableIntStateOf(0) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = EmeraldSurface),
-            border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxHeight(0.9f)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("CONFIGURAR JUGADA", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 18.sp)
+        Card(shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = EmeraldSurface), border = BorderStroke(1.dp, EmeraldMain.copy(0.3f))) {
+            Column(modifier = Modifier.padding(24.dp).fillMaxHeight(0.9f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("NUEVA JUGADA", color = GoldLuxe, fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(20.dp))
-
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre de la jugada", color = Color.White.copy(0.5f)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldMain,
-                        unfocusedBorderColor = Color.White.copy(0.2f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Nombre (Ej: Mi Suerte)", color = Color.White.copy(0.4f)) },
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = EmeraldMain, unfocusedBorderColor = Color.White.copy(0.1f), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Panel de números seleccionados
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    (0..5).forEach { index ->
-                        val num = selected.toList().sorted().getOrNull(index)
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(if (num != null) EmeraldMain else Color.White.copy(0.05f))
-                                .border(1.dp, if (num != null) GoldLuxe else Color.White.copy(0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = num?.toString() ?: "",
-                                color = if (num != null) Color.Black else Color.White,
-                                fontWeight = FontWeight.Black
-                            )
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    (0..5).forEach { i ->
+                        val n = selected.toList().sorted().getOrNull(i)
+                        Box(modifier = Modifier.padding(4.dp).size(38.dp).clip(CircleShape).background(if (n != null) EmeraldMain else Color.White.copy(0.05f)).border(1.dp, if (n != null) GoldLuxe else Color.White.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text(n?.toString() ?: "", color = if (n != null) Color.Black else Color.White, fontWeight = FontWeight.Black)
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (frequentNumbers.isNotEmpty()) {
-                    Text("TENDENCIAS (Toca para añadir)", color = EmeraldMain, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        frequentNumbers.take(12).forEach { n ->
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(if (selected.contains(n)) EmeraldMain else GoldLuxe.copy(0.1f))
-                                    .border(1.dp, if (selected.contains(n)) GoldLuxe else GoldLuxe.copy(0.3f), CircleShape)
-                                    .clickable {
-                                        if (selected.contains(n)) selected -= n
-                                        else if (selected.size < 6) selected += n
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(n.toString(), color = if (selected.contains(n)) Color.Black else GoldLuxe, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                Text("SELECCIÓN MANUAL", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                Spacer(modifier = Modifier.height(20.dp))
+                FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     (1..49).forEach { n ->
-                        val isSelected = selected.contains(n)
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) EmeraldMain else Color.White.copy(0.05f))
-                                .border(1.dp, if (isSelected) GoldLuxe else Color.White.copy(0.1f), CircleShape)
-                                .clickable {
-                                    if (isSelected) selected -= n
-                                    else if (selected.size < 6) selected += n
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                n.toString(),
-                                color = if (isSelected) Color.Black else Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Normal
-                            )
+                        val isS = selected.contains(n)
+                        Box(modifier = Modifier.padding(4.dp).size(36.dp).clip(CircleShape).background(if (isS) EmeraldMain else Color.White.copy(0.05f)).border(1.dp, if (isS) GoldLuxe else Color.White.copy(0.1f), CircleShape).clickable { if (isS) selected -= n else if (selected.size < 6) selected += n }, contentAlignment = Alignment.Center) {
+                            Text(n.toString(), color = if (isS) Color.Black else Color.White, fontSize = 12.sp, fontWeight = if (isS) FontWeight.Black else FontWeight.Normal)
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text("REINTEGRO: $reintegro", color = GoldLuxe, fontWeight = FontWeight.Black)
-                Slider(
-                    value = reintegro.toFloat(),
-                    onValueChange = { reintegro = it.toInt() },
-                    valueRange = 0f..9f,
-                    steps = 8,
-                    colors = SliderDefaults.colors(
-                        thumbColor = EmeraldMain,
-                        activeTrackColor = EmeraldMain,
-                        inactiveTrackColor = Color.White.copy(0.1f)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { onSave(name, selected.toList().sorted(), reintegro); onDismiss() },
-                    enabled = selected.size == 6,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain, disabledContainerColor = Color.White.copy(0.1f))
-                ) {
-                    Text("GUARDAR COMBINACIÓN", fontWeight = FontWeight.Black)
-                }
-
-                TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 8.dp)) {
-                    Text("CANCELAR", color = Color.White.copy(0.5f))
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("REINTEGRO: $reintegro", color = GoldLuxe, fontWeight = FontWeight.Bold)
+                Slider(value = reintegro.toFloat(), onValueChange = { reintegro = it.toInt() }, valueRange = 0f..9f, steps = 8, colors = SliderDefaults.colors(thumbColor = EmeraldMain, activeTrackColor = EmeraldMain))
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(onClick = { onSave(name, selected.toList().sorted(), reintegro); onDismiss() }, enabled = selected.size == 6, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = EmeraldMain, disabledContainerColor = Color.White.copy(0.1f))) {
+                    Text("GUARDAR JUGADA", fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -568,11 +484,6 @@ fun ManualEntryDialog(initialNumbers: List<Int>, frequentNumbers: List<Int>, onD
 }
 
 @Composable
-fun AlgorithmHelpDialog(onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = { Button(onClick = onDismiss) { Text("OK") } }, title = { Text("Estrategia 2026") }, text = { Text("Analizamos las tendencias reales de Abril 2026 para sugerir números con mayor probabilidad.") })
-}
-
-@Composable
 fun LuxeExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = { Button(onClick = onConfirm) { Text("SALIR") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("CANCELAR") } }, title = { Text("¿Salir?") })
+    AlertDialog(onDismissRequest = onDismiss, confirmButton = { Button(onClick = onConfirm) { Text("SALIR") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("VOLVER") } }, title = { Text("¿Cerrar App?") }, containerColor = EmeraldSurface, titleContentColor = Color.White)
 }
