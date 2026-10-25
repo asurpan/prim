@@ -3,7 +3,7 @@ package com.sagon.prim.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * PALETA "EMERALD LUXE" - ALTA JOYERÍA DIGITAL
+ * PALETA "EMERALD PRIM" - ALTA JOYERÍA DIGITAL
  */
 
 // --- FONDOS DE PROFUNDIDAD ---
@@ -34,7 +34,7 @@ val BorderGlass = Color(0x26FFFFFF)
 val SurfaceOverlay = Color(0x0DFFFFFF)
 
 // --- GRADIENTES ---
-val LuxeGreenGradient = listOf(EmeraldMain, EmeraldVibrant)
+val PrimGreenGradient = listOf(EmeraldMain, EmeraldVibrant)
 val DeepGreenGradient = listOf(EmeraldBlack, EmeraldDeep)
 val GoldGradient = listOf(GoldSoft, Color(0xFFEAB308))
 val SapphireGradient = listOf(ActionBlue, Color(0xFF1D4ED8))

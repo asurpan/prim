@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">PRIM</string>
+    <string name="app_name">PRIM - Primitiva, Lotería y Sorteos</string>
     <string name="menu_title_combinations">Mis Combinaciones</string>
+    <string name="app_keywords">Primitiva, Sorteo, Lotería, Quiniela, Bonoloto, Euromillones, Resultados, Suerte, Estrategia, Escrutinio</string>
 </resources>

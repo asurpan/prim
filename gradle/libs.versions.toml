@@ -3,6 +3,7 @@ cardview = "1.0.0" # Añade esta línea
 gson = "2.11.0" # Añade esta línea
 agp = "8.13.0"
 
+jsoupVersion = "1.16.1"
 kotlin = "1.9.0"
 compose-bom = "2024.10.01"
 activity-compose = "1.9.3"
@@ -59,6 +60,7 @@ core = { module = "com.google.zxing:core", version.ref = "core" }
 
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
+jsoup-v1161 = { module = "org.jsoup:jsoup", version.ref = "jsoupVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

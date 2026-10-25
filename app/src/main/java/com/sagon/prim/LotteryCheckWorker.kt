@@ -21,7 +21,7 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
     private val NOTIFICATION_ID = 1
 
     override suspend fun doWork(): Result {
-        val sharedPreferences = applicationContext.getSharedPreferences("prim_luxe_prefs", Context.MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("prim_prefs", Context.MODE_PRIVATE)
         val calendar = Calendar.getInstance()
         val currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
 
@@ -53,12 +53,19 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
             sharedPreferences.edit().putString("last_lottery_result", Gson().toJson(finalResult)).apply()
 
             val savedCombinations = loadCombinations(applicationContext)
-            val aciertosMap = mutableMapOf<String, Int>()
+            val aciertosMap = mutableMapOf<String, String>()
 
             savedCombinations.forEach { combination ->
                 val hits = combination.numbers.intersect(result.numbers.toSet()).size
-                if (hits >= 3) {
-                    aciertosMap[combination.name] = hits
+                val hitReint = combination.reintegro == result.reintegro
+                
+                if (hits >= 3 || hitReint) {
+                    val message = when {
+                        hits >= 3 && hitReint -> "$hits aciertos + R"
+                        hits >= 3 -> "$hits aciertos"
+                        else -> "¡Solo Reintegro!"
+                    }
+                    aciertosMap[combination.name] = message
                 }
             }
 
@@ -134,7 +141,7 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
     private fun loadCombinations(context: Context): List<Combination> {
-        val prefs = context.getSharedPreferences("prim_luxe_prefs", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("prim_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString("saved_combis", null) ?: return emptyList()
         return try {
             val type = object : TypeToken<List<Combination>>() {}.type
@@ -144,17 +151,17 @@ class LotteryCheckWorker(appContext: Context, workerParams: WorkerParameters) :
         }
     }
 
-    private fun sendNotification(aciertosMap: Map<String, Int>) {
+    private fun sendNotification(aciertosMap: Map<String, String>) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(CHANNEL_ID, "Aciertos Primitiva", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
 
-        val content = aciertosMap.entries.joinToString("\n") { "${it.key}: ¡${it.value} aciertos!" }
+        val content = aciertosMap.entries.joinToString("\n") { "${it.key}: ${it.value}" }
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("¡Resultados Primitiva!")
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentTitle("¡PREMIO EN PRIMITIVA PRIM! ✨")
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setPriority(NotificationCompat.PRIORITY_HIGH)

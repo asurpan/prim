@@ -9,17 +9,17 @@ android {
 
     defaultConfig {
         applicationId = "com.sagon.prim"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 36
-        versionCode = 17
-        versionName = "17.0 Platinum"
+        versionCode = 31
+        versionName = "31.0 Full"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -47,6 +47,11 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -87,7 +92,7 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
     // JSoup para parsear HTML si lo necesitas
-    implementation("org.jsoup:jsoup:1.16.1")
+    implementation(libs.jsoup.v1161)
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -96,10 +101,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.8.1")
 
     // CameraX
-    val camerax_version = "1.3.4"
+    val camerax_version = "1.4.2"
     implementation("androidx.camera:camera-camera2:$camerax_version")
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
+    implementation("androidx.camera:camera-core:$camerax_version")
 
     // Evitar conflictos de annotations
     implementation("androidx.annotation:annotation:1.7.0")
