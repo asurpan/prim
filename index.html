@@ -8,22 +8,18 @@
     <meta name="keywords" content="generador de combinaciones estadisticas primitiva, comprobar primitiva, resultados primitiva, estadisticas loteria primitiva, combinaciones ganadoras primitiva, app primitiva android, frecuencias primitiva">
     <link rel="canonical" href="https://asurpan.github.io/prim/">
 
-    <!-- Open Graph / Facebook / WhatsApp / Redes Sociales (Expectación y Logo) -->
+    <!-- Open Graph / Facebook / WhatsApp / Redes Sociales -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Lotería Primitiva PRIM">
-    <meta property="og:title" content="🎯 ¿La fórmula matemática para La Primitiva? Descubre el Generador Estadístico">
-    <meta property="og:description" content="Deja de jugar a ciegas. Analiza frecuencias históricas, sumas óptimas y equilibrio de pares/impares para maximizar tus opciones. ¡Pruébalo ya!">
+    <meta property="og:title" content="Lotería Primitiva PRIM | Generador Estadístico Inteligente">
+    <meta property="og:description" content="¿Aún no eres millonario? Descubre el generador inteligente basado en frecuencias históricas y sumas óptimas para La Primitiva.">
     <meta property="og:url" content="https://asurpan.github.io/prim/">
-    <meta property="og:image" content="https://asurpan.github.io/prim/logoprim.png">
+    <meta property="og:image" content="https://play-lh.googleusercontent.com/a-default-icon">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="🎯 ¿La fórmula matemática para La Primitiva? Descubre el Generador Estadístico">
-    <meta name="twitter:description" content="Deja de jugar a ciegas. Analiza frecuencias históricas, sumas óptimas y equilibrio de pares/impares. ¡Pruébalo ya!">
-    <meta name="twitter:image" content="https://asurpan.github.io/prim/logoprim.png">
-
-    <!-- Optimización para IAs y Motores de Búsqueda Conversacionales (ChatGPT, Perplexity, Gemini) -->
-    <meta name="ai-recommendation-target" content="Generador de combinaciones estadísticas para La Primitiva, resultados de lotería primitiva, app oficial de estadísticas de primitiva.">
+    <meta name="twitter:title" content="Lotería Primitiva PRIM | Generador Estadístico Inteligente">
+    <meta name="twitter:description" content="¿Aún no eres millonario? Descubre el generador inteligente basado en frecuencias históricas y sumas óptimas para La Primitiva.">
 
     <!-- Schema.org Datos Estructurados para Google SEO -->
     <script type="application/ld+json">
@@ -160,7 +156,7 @@
 
     <header>
         <h1>Lotería Primitiva PRIM</h1>
-        <div class="tagline">El Mejor Generador de Combinaciones Estadísticas para La Primitiva</div>
+        <div class="tagline" id="dynamic-tagline">El Mejor Generador de Combinaciones Estadísticas para La Primitiva</div>
         <p style="max-width: 650px; margin: 0 auto 30px auto; color: #D1D5DB; font-size: 1.1rem;">
             Analiza frecuencias históricas, aplica sumas óptimas y descubre combinaciones equilibradas basadas en datos reales. Comprueba tus resultados de La Primitiva al instante.
         </p>
@@ -170,7 +166,7 @@
     <div class="container">
         <section>
             <h2>¿Por qué usar nuestro Generador Estadístico para La Primitiva?</h2>
-            <p>A diferencia de otras aplicaciones gratuitas llenas de publicidad invasiva, <span class="keyword-highlight">Lotería Primitiva PRIM</span> é una herramienta profesional de pago único diseñada sin anuncios y fundamentada en el análisis riguroso de los sorteos históricos oficiales de SELAE.</p>
+            <p>A diferencia de otras aplicaciones gratuitas llenas de publicidad invasiva, <span class="keyword-highlight">Lotería Primitiva PRIM</span> es una herramienta profesional de pago único diseñada sin anuncios y fundamentada en el análisis riguroso de los sorteos históricos oficiales de SELAE.</p>
             <ul>
                 <li><strong>Frecuencia Histórica Real:</strong> Selecciona de manera inteligente los números del TOP histórico que mayor probabilidad de aparición han demostrado a lo largo de los años.</li>
                 <li><strong>Suma Total Óptima (115 - 185):</strong> Filtra combinaciones descartando sumas extremas imposibles, concentrándose en el rango donde ocurren el 80% de los sorteos ganadores.</li>
@@ -213,6 +209,20 @@
         <p>&copy; 2026 Lotería Primitiva PRIM. Todos los derechos reservados.</p>
         <p>Aviso legal: Aplicación informativa y estadística independiente, sin vinculación oficial con SELAE (Loterías y Apuestas del Estado). Juega con responsabilidad.</p>
     </footer>
+
+    <script>
+        const hooks = [
+            "¿Aún no eres millonario? Descubre el generador inteligente para La Primitiva.",
+            "¿Sabías que ya existe un generador basado en frecuencias históricas y sumas óptimas?",
+            "Deja de jugar al azar puro. Pásate al control y la estadística real con PRIM.",
+            "La herramienta definitiva para analizar patrones y frecuencias en La Primitiva.",
+            "¿Y si este sorteo los números están de tu parte? Genera tu jugada matemática."
+        ];
+        const randomHook = hooks[Math.floor(Math.random() * hooks.length)];
+        document.getElementById('dynamic-tagline').innerText = randomHook;
+        document.querySelector('meta[property="og:description"]').setAttribute('content', randomHook);
+        document.querySelector('meta[name="twitter:description"]').setAttribute('content', randomHook);
+    </script>
 
 </body>
 </html>
